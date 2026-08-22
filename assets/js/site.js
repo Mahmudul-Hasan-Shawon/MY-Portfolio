@@ -878,13 +878,52 @@ function markActiveNav() {
     });
 }
 
+// function socialHTML(featuredOnly) {
+//     return SOCIAL.filter(function (s) {
+//         return on2(s.show) && s.url && (!featuredOnly || on2(s.featured));
+//     }).map(function (s) {
+//         return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener" title="' + esc(s.platform) +
+//             '" aria-label="' + esc(s.platform) + '"><i class="' + esc(icon(s.icon, "fa-solid fa-link")) + '"></i></a>';
+//     }).join("");
+// }
+
 function socialHTML(featuredOnly) {
     return SOCIAL.filter(function (s) {
         return on2(s.show) && s.url && (!featuredOnly || on2(s.featured));
     }).map(function (s) {
+        var iconHtml = renderIcon(s.icon, s.platform);
         return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener" title="' + esc(s.platform) +
-            '" aria-label="' + esc(s.platform) + '"><i class="' + esc(icon(s.icon, "fa-solid fa-link")) + '"></i></a>';
+            '" aria-label="' + esc(s.platform) + '">' + iconHtml + '</a>';
     }).join("");
+}
+
+/* Render an icon — supports Font Awesome classes OR image paths (SVG, PNG, ICO, etc.) */
+function renderIcon(iconValue, altText) {
+    var v = String(iconValue || "").trim();
+    if (!v) return '<i class="fa-solid fa-link"></i>';
+    
+    // Check if it's an image file path (ends with .svg, .png, .ico, .jpg, .jpeg, .webp, .gif)
+    if (/\.(svg|png|ico|jpg|jpeg|webp|gif)(\?.*)?$/i.test(v)) {
+        var src = resolveAsset(v);
+        return '<img src="' + esc(src) + '" alt="' + esc(altText || 'icon') + '" class="social-icon">';
+    }
+    
+    // Otherwise treat as Font Awesome class
+    return '<i class="' + esc(icon(v, "fa-solid fa-link")) + '"></i>';
+}
+
+
+/* Resolve asset paths to work from any URL depth. */
+function resolveAsset(path) {
+    if (!path) return "";
+    // If it's already absolute (http, https, //, or starts with /), return as-is
+    if (/^(https?:)?\/\//i.test(path) || path.charAt(0) === "/") return path;
+    // If it's a relative path (./ or ../), resolve it against BASE
+    if (path.indexOf("./") === 0 || path.indexOf("../") === 0) {
+        return BASE + path.replace(/^\.\/?/, "/");
+    }
+    // Default: treat as root-relative
+    return BASE + "/" + path;
 }
 
 /* ── HERO ─────────────────────────────────────────────────────────────── */
