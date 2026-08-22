@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- All of the tags below are overwritten at runtime from the ⚙ Config sheet -->
+    <title>Portfolio</title>
+    <meta name="description" id="meta-desc" content="Engineering portfolio." />
+    <meta name="keywords" id="meta-keys" content="" />
+    <meta name="author" id="meta-author" content="" />
+    <meta name="theme-color" id="meta-theme" content="#08090B" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" id="og-title" content="Portfolio" />
+    <meta property="og:description" id="og-desc" content="" />
+    <meta property="og:image" id="og-image" content="" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" id="canonical" href="" />
+    <link rel="icon" id="favicon" href="data:," />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="./assets/css/styles.css" />
+
+    <!-- Sheet-driven theme overrides land here -->
+    <style id="theme-vars"></style>
+    <style id="custom-css"></style>
+</head>
+
+<body>
+
+    <!-- ── Preloader ─────────────────────────────────────────────── -->
+    <!-- A drafting sheet that assembles itself, then lifts off the page.
+         #pre-mark, #pre-fill, #pre-txt and #pre-pct are written by site.js. -->
+    <div id="preloader" aria-hidden="true">
+        <div class="pre-grid"></div>
+
+        <div class="pre-frame">
+            <span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="pre-inner">
+            <div class="pre-stage">
+                <i class="pre-rule pre-rule-x"></i>
+                <i class="pre-rule pre-rule-y"></i>
+                <!-- <div class="pre-mark" id="pre-mark">—</div> -->
+                <i class="pre-scan"></i>
+            </div>
+
+            <div class="pre-meter">
+                <div class="pre-read">
+                    <span class="pre-txt" id="pre-txt">initialising</span>
+                    <span class="pre-pct"><b id="pre-pct">0</b>%</span>
+                </div>
+                <div class="pre-bar">
+                    <i class="pre-tick" style="left:25%"></i>
+                    <i class="pre-tick" style="left:50%"></i>
+                    <i class="pre-tick" style="left:75%"></i>
+                    <span id="pre-fill"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Ambient layers ────────────────────────────────────────── -->
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-glow" aria-hidden="true"></div>
+    <div class="bg-grain" aria-hidden="true"></div>
+    <div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+    <div id="scroll-progress" aria-hidden="true"></div>
+
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- ── Header ────────────────────────────────────────────────── -->
+    <header id="site-header">
+        <div class="shell nav-shell">
+            <a class="brand" href="#hero" id="brand">
+                <span class="brand-mark" id="brand-mark">—</span>
+                <span class="brand-text">
+                    <span class="brand-name" id="brand-name">Portfolio</span>
+                    <span class="brand-sub" id="brand-sub"></span>
+                </span>
+            </a>
+
+            <nav class="nav-links" id="nav-links" aria-label="Primary"></nav>
+
+            <div class="nav-right">
+                <span class="status-chip" id="status-chip" hidden>
+                    <span class="status-dot"></span><span id="status-text"></span>
+                </span>
+                <a class="btn btn-accent btn-sm" id="nav-cta" href="#contact">Contact</a>
+                <button class="icon-btn nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">
+                    <span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── Mobile drawer ─────────────────────────────────────────── -->
+    <div class="drawer-veil" id="drawer-veil" hidden></div>
+    <aside id="drawer" aria-label="Menu" data-lenis-prevent hidden>
+        <div class="drawer-head">
+            <span class="mono-label">menu</span>
+            <button class="icon-btn" id="drawer-close" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <nav class="drawer-links" id="drawer-links"></nav>
+        <div class="drawer-foot">
+            <div class="social-row" id="drawer-social"></div>
+            <a class="btn btn-accent btn-block" href="#contact" data-close-drawer>Start a project</a>
+        </div>
+    </aside>
+
+    <!-- ── Sections are injected in the order set in the 🧩 Sections sheet ── -->
+    <main id="main"></main>
+
+    <!-- ── Footer ────────────────────────────────────────────────── -->
+    <footer id="site-footer"></footer>
+
+    <!-- ── Toast ─────────────────────────────────────────────────── -->
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- ── Back to top ───────────────────────────────────────────── -->
+    <button id="to-top" aria-label="Back to top" hidden><i class="fa-solid fa-arrow-up"></i></button>
+
+    <!-- Lenis smooth scrolling. Loaded before site.js so the instance exists
+         by the time initSmoothScroll() runs. Page scroll only — the drawer
+         and the project panel keep their native scrolling. -->
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script src="./assets/js/site.js"></script>
+</body>
+
+</html>
