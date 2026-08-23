@@ -62,6 +62,13 @@
     --sec-y: clamp(4.5rem, 9vw, 8.5rem);
 
     /* ── Depth ───────────────────────────────────────────── */
+    /* Card shadows. Tokenised because a black shadow tuned for ink turns
+       into a grey haze on paper — and where cards sit close together the
+       overlapping shadows in the gaps read as a dark band. */
+    --card-sh: 0 8px 32px rgba(0, 0, 0, .4);
+    --card-sh-hover: 0 24px 80px rgba(0, 0, 0, .6);
+    --card-sh-lift: 0 28px 90px rgba(0, 0, 0, .7);
+
     --sh-sm: 0 1px 2px rgba(0, 0, 0, .5);
     --sh: 0 18px 44px -20px rgba(0, 0, 0, .85);
     --sh-lg: 0 40px 90px -40px rgba(0, 0, 0, .95);
@@ -74,6 +81,11 @@
 [data-theme="light"] {
     --bg: #F7F6F2;
     --bg-0: rgba(247, 246, 242, 0);
+    /* Shorter, tighter and far weaker: on a light surface the shadow only
+       has to lift the card off the page, not separate it from black. */
+    --card-sh: 0 4px 18px -8px rgba(20, 22, 26, .16);
+    --card-sh-hover: 0 16px 42px -18px rgba(20, 22, 26, .2);
+    --card-sh-lift: 0 22px 56px -22px rgba(20, 22, 26, .22);
     --bg-2: #FFFFFF;
     --surface: #FFFFFF;
     --surface-2: #F1EFE9;
@@ -2313,11 +2325,11 @@ h4 {
 /* ── Shadow for cards ─────────────────────────────────────── */
 
 .tst {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--card-sh);
 }
 
 .tst:hover {
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(201, 242, 77, 0.06);
+    box-shadow: var(--card-sh-hover), 0 0 60px color-mix(in srgb, var(--accent) 6%, transparent);
     transform: translateY(-4px);
     border-color: var(--accent-line);
 }
@@ -2361,7 +2373,7 @@ h4 {
 .tst-scroll-track .tst:hover {
     opacity: 1;
     transform: scale(1.02);
-    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.7), 0 0 80px rgba(201, 242, 77, 0.08);
+    box-shadow: var(--card-sh-lift), 0 0 80px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 /* ── Fade edges - FULL WIDTH ──────────────────────────────── */
@@ -2405,13 +2417,13 @@ h4 {
     line-height: 0.6;
     color: var(--accent);
     opacity: 0.3;
-    text-shadow: 0 4px 30px rgba(201, 242, 77, 0.12);
+    text-shadow: 0 4px 30px var(--accent-dim);
     transition: opacity 0.4s ease, text-shadow 0.4s ease;
 }
 
 .tst:hover .quote-mark {
     opacity: 0.5;
-    text-shadow: 0 8px 50px rgba(201, 242, 77, 0.2);
+    text-shadow: 0 8px 50px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 /* ── Testimonial text ────────────────────────────────────── */
@@ -2473,7 +2485,7 @@ h4 {
     font-size: 0.9rem;
     letter-spacing: 0.1em;
     white-space: nowrap;
-    text-shadow: 0 0 30px rgba(201, 242, 77, 0.08);
+    text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 8%, transparent);
     transition: text-shadow 0.4s ease;
     display: inline-flex;
     gap: .18em;
@@ -2492,7 +2504,7 @@ h4 {
 }
 
 .tst:hover .stars {
-    text-shadow: 0 0 50px rgba(201, 242, 77, 0.2);
+    text-shadow: 0 0 50px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
