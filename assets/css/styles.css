@@ -3392,6 +3392,97 @@ a.contact-line:hover {
 
 
 /* ==========================================================================
+   COLOUR SCHEME
+   The palettes themselves live at the top of this file: :root holds dark,
+   [data-theme="light"] holds light, and ⚙ Config overrides either through
+   the scoped blocks site.js injects. Only the pieces that need to behave
+   differently between the two are below.
+   ========================================================================== */
+
+/* The swap, cross-faded. site.js adds .theme-anim for the length of the
+   fade only, and never when the visitor prefers reduced motion. */
+html.theme-anim body,
+html.theme-anim #site-header,
+html.theme-anim #drawer,
+html.theme-anim #preloader,
+html.theme-anim .rz-doc,
+html.theme-anim .rz-tag,
+html.theme-anim .btn,
+html.theme-anim .icon-btn,
+html.theme-anim .bg-grid,
+html.theme-anim .bg-glow {
+    transition: background-color .32s var(--ease),
+                border-color .32s var(--ease),
+                color .32s var(--ease);
+}
+
+/* The grain is tuned for a dark canvas: "overlay" on a light background
+   lifts it into visible speckle, so light mode multiplies it down instead.
+   The rule grid is likewise softened, since dark lines on paper read much
+   heavier than light lines on ink at the same opacity. */
+[data-theme="light"] .bg-grain {
+    mix-blend-mode: multiply;
+    opacity: .022;
+}
+
+[data-theme="light"] .bg-grid {
+    opacity: .5;
+}
+
+[data-theme="light"] .cursor-glow {
+    opacity: .5;
+}
+
+/* ── The toggle ───────────────────────────────────────────────────────── */
+#theme-toggle {
+    display: inline-grid;
+    place-items: center;
+}
+
+#theme-toggle[hidden] {
+    display: none;
+}
+
+#theme-toggle i {
+    font-size: .84rem;
+    line-height: 1;
+}
+
+/* The icon turns over rather than simply swapping. */
+@media (prefers-reduced-motion: no-preference) {
+    #theme-toggle i {
+        animation: theme-flip .34s var(--ease-out);
+    }
+}
+
+@keyframes theme-flip {
+    from {
+        opacity: 0;
+        transform: rotate(-90deg) scale(.7);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* The résumé's paper mode is a white sheet in either scheme, so the page
+   behind it stays light too — but in light mode the site background is
+   already close, and the extra grey just muddies it. */
+[data-theme="light"] body.on-resume[data-rz-theme="paper"] {
+    background: var(--bg);
+}
+
+@media print {
+
+    #theme-toggle {
+        display: none !important;
+    }
+}
+
+
+/* ==========================================================================
    RÉSUMÉ — the unlisted page (/resume)
 
    A typeset document rather than a web page. Section headings sit in a left

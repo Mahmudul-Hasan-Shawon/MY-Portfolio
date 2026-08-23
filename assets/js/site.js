@@ -8,7 +8,7 @@
    2. Everything else is edited in the spreadsheet.
    ========================================================================== */
 
-var API_URL = "https://script.google.com/macros/s/AKfycbxt-5LfRuV6_XqdP8tZt_MfO6fiXkqwLYJUbvK8WRT8_L00MNLqafYVNe6aoKBZuyjN/exec"; // ← "https://script.google.com/macros/s/AKfy.../exec"
+var API_URL = "https://script.google.com/macros/s/AKfycbxRxZhO0iu9mpfk-zi6Z-KvYFrVj1zmq0gdStc8tXGpXw8vdY_2oNZwyrZRiFXYWT_JLQ/exec"; // ← "https://script.google.com/macros/s/AKfy.../exec"
 
 /* ── State ────────────────────────────────────────────────────────────── */
 var CFG = {};      // ⚙ Config          → key/value map
@@ -813,21 +813,153 @@ function applyMeta() {
     }
 }
 
-function applyTheme() {
-    document.documentElement.setAttribute(
-        "data-theme",
-        String(cfg("themeMode", "dark")).toLowerCase().indexOf("light") === 0 ? "light" : "dark"
-    );
+/* ==========================================================================
+   COLOUR SCHEME
+   Three inputs, in descending order of authority:
 
-    var vars = {
-        "--accent": cfg("accentColor"),
-        "--accent-2": cfg("accentColor2"),
-        "--accent-ink": cfg("accentTextColor"),
-        "--bg": cfg("backgroundColor"),
-        "--surface": cfg("surfaceColor"),
-        "--text": cfg("textColor"),
-        "--muted": cfg("mutedColor"),
-        "--line": cfg("borderColor"),
+     1. the visitor's own choice, kept in localStorage
+     2. ⚙ Config → "Theme Mode":  auto | dark | light
+     3. the operating system, whenever Theme Mode is auto
+
+   The data-theme attribute is set by a short inline script in index.html
+   before first paint, so a returning visitor never sees a flash of the wrong
+   palette while the sheet is still in flight. Everything below reconciles
+   that first guess with the sheet once it lands.
+   ========================================================================== */
+
+var THEME_KEY = "site-theme";   // must match the inline script in index.html
+var THEME_MQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
+var THEME_T = null;
+
+/* Storage can throw outright in private mode and in embedded webviews, so
+   every touch is guarded: the worst case is a preference that doesn't
+   outlive the tab, never a page that fails to render. */
+function themeSaved() {
+    try {
+        var v = localStorage.getItem(THEME_KEY);
+        return (v === "dark" || v === "light") ? v : null;
+    } catch (e) { return null; }
+}
+
+function themeSave(v) {
+    try {
+        if (v) localStorage.setItem(THEME_KEY, v);
+        else localStorage.removeItem(THEME_KEY);
+    } catch (e) { /* nothing to do — the choice just won't persist */ }
+}
+
+function themeSystem() { return (THEME_MQ && THEME_MQ.matches) ? "light" : "dark"; }
+
+/* "auto"/"system" follows the OS. Anything starting "light" pins light.
+   Everything else — including a blank cell — pins dark, which is what the
+   site did before this setting existed. */
+function themeMode() {
+    var m = String(cfg("themeMode", "auto")).trim().toLowerCase();
+    if (m.indexOf("auto") === 0 || m.indexOf("system") === 0) return "auto";
+    return m.indexOf("light") === 0 ? "light" : "dark";
+}
+
+function themeToggleOn() { return on("showThemeToggle", "yes"); }
+
+function themeResolved() {
+    // With the toggle switched off there is no way to change the choice, so
+    // a preference saved during an earlier visit is ignored rather than
+    // stranding someone on a palette they can no longer get out of.
+    var saved = themeToggleOn() ? themeSaved() : null;
+    if (saved) return saved;
+    var mode = themeMode();
+    return mode === "auto" ? themeSystem() : mode;
+}
+
+function themeBg(t) {
+    return t === "light"
+        ? cfg("lightBackgroundColor", "#F7F6F2")
+        : cfg("backgroundColor", "#08090B");
+}
+
+function applyThemeAttr() {
+    var t = themeResolved();
+    document.documentElement.setAttribute("data-theme", t);
+
+    var meta = document.getElementById("meta-theme");
+    if (meta) meta.setAttribute("content", themeBg(t));
+
+    paintThemeToggle(t);
+    return t;
+}
+
+/* What the button steps through. Default is a plain two-state switch; adding
+   "auto" to ⚙ Config → "Theme Toggle Modes" offers a way back to the OS. */
+function themeModes() {
+    var list = listOf(cfg("themeToggleModes", "light, dark"))
+        .map(function (s) { return s.toLowerCase(); })
+        .filter(function (s) { return s === "light" || s === "dark" || s === "auto"; });
+    return list.length ? list : ["light", "dark"];
+}
+
+function cycleTheme() {
+    var modes = themeModes();
+    var saved = themeSaved();
+
+    // Starting from what is currently on screen — rather than from the
+    // stored value — keeps the first click meaningful: on a light OS with no
+    // preference saved, "next" has to be dark, not light again.
+    var cur = saved ||
+        ((themeMode() === "auto" && modes.indexOf("auto") > -1) ? "auto" : themeResolved());
+
+    var i = modes.indexOf(cur);
+    var next = modes[(i + 1) % modes.length];
+
+    themeSave(next === "auto" ? null : next);
+    themeAnimate();
+    applyThemeAttr();
+}
+
+function paintThemeToggle(t) {
+    var btn = $("#theme-toggle");
+    if (!btn) return;
+
+    if (!themeToggleOn()) { btn.setAttribute("hidden", ""); return; }
+    btn.removeAttribute("hidden");
+
+    var auto = !themeSaved() && themeMode() === "auto";
+    var icon = auto ? "fa-circle-half-stroke" : (t === "light" ? "fa-sun" : "fa-moon");
+    var label = auto ? cfg("themeAutoLabel", "Theme: following your system")
+        : (t === "light" ? cfg("themeLightLabel", "Theme: light")
+            : cfg("themeDarkLabel", "Theme: dark"));
+
+    btn.innerHTML = '<i class="fa-solid ' + icon + '" aria-hidden="true"></i>';
+    btn.setAttribute("aria-label", label);
+    btn.setAttribute("title", label);
+}
+
+/* A brief cross-fade so the swap doesn't snap. Held to a class for only as
+   long as the fade lasts, so the transition never fights anything else. */
+function themeAnimate() {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var el = document.documentElement;
+    el.classList.add("theme-anim");
+    clearTimeout(THEME_T);
+    THEME_T = setTimeout(function () { el.classList.remove("theme-anim"); }, 420);
+}
+
+/* Follow the OS live, but only while the visitor hasn't overridden it. */
+if (THEME_MQ) {
+    var themeSysChange = function () {
+        if (themeSaved() && themeToggleOn()) return;
+        themeAnimate();
+        applyThemeAttr();
+    };
+    if (THEME_MQ.addEventListener) THEME_MQ.addEventListener("change", themeSysChange);
+    else if (THEME_MQ.addListener) THEME_MQ.addListener(themeSysChange);
+}
+
+/* ── Sheet-driven palette ────────────────────────────────────────────── */
+function applyTheme() {
+    applyThemeAttr();
+
+    // Tokens that don't depend on the palette stay on :root.
+    var base = {
         "--ff-display": cfg("displayFont"),
         "--ff-sans": cfg("bodyFont"),
         "--ff-mono": cfg("monoFont"),
@@ -836,16 +968,35 @@ function applyTheme() {
     };
 
     var css = ":root{";
-    Object.keys(vars).forEach(function (k) { if (vars[k]) css += k + ":" + vars[k] + ";"; });
-
-    // Accent tints are derived so a single hex in the sheet restyles the page.
-    var a = String(cfg("accentColor", "")).trim();
-    if (/^#[0-9a-f]{6}$/i.test(a)) {
-        var r = parseInt(a.substr(1, 2), 16), g = parseInt(a.substr(3, 2), 16), b = parseInt(a.substr(5, 2), 16);
-        css += "--accent-dim:rgba(" + r + "," + g + "," + b + ",.12);";
-        css += "--accent-line:rgba(" + r + "," + g + "," + b + ",.32);";
-    }
+    Object.keys(base).forEach(function (k) { if (base[k]) css += k + ":" + base[k] + ";"; });
     css += "}";
+
+    // Colours are scoped per scheme. Written to :root instead, a single
+    // Config colour would paint both schemes and light mode could never be
+    // anything but a dark page with light text.
+    css += themeBlock("dark", {
+        "--accent": cfg("accentColor"),
+        "--accent-2": cfg("accentColor2"),
+        "--accent-ink": cfg("accentTextColor"),
+        "--bg": cfg("backgroundColor"),
+        "--surface": cfg("surfaceColor"),
+        "--text": cfg("textColor"),
+        "--muted": cfg("mutedColor"),
+        "--line": cfg("borderColor")
+    }, ".12", ".32");
+
+    // Every light cell may be left blank, in which case the stylesheet's own
+    // light palette stands.
+    css += themeBlock("light", {
+        "--accent": cfg("lightAccentColor"),
+        "--accent-2": cfg("lightAccentColor2"),
+        "--accent-ink": cfg("lightAccentTextColor"),
+        "--bg": cfg("lightBackgroundColor"),
+        "--surface": cfg("lightSurfaceColor"),
+        "--text": cfg("lightTextColor"),
+        "--muted": cfg("lightMutedColor"),
+        "--line": cfg("lightBorderColor")
+    }, ".10", ".28");
 
     $("#theme-vars").textContent = css;
     $("#custom-css").textContent = cfg("customCss", "");
@@ -856,6 +1007,31 @@ function applyTheme() {
         l.rel = "stylesheet"; l.href = cfg("googleFontsUrl");
         document.head.appendChild(l);
     }
+}
+
+/* One scheme's block, with the accent tints derived so a single hex in the
+   sheet restyles the whole page the way it always has. */
+function themeBlock(name, vars, dim, line) {
+    var css = "";
+    Object.keys(vars).forEach(function (k) { if (vars[k]) css += k + ":" + vars[k] + ";"; });
+
+    var a = rgbOf(vars["--accent"]);
+    if (a) {
+        css += "--accent-dim:rgba(" + a + "," + dim + ");";
+        css += "--accent-line:rgba(" + a + "," + line + ");";
+    }
+    var a2 = rgbOf(vars["--accent-2"]);
+    if (a2) css += "--accent-2-dim:rgba(" + a2 + "," + dim + ");";
+
+    return css ? '[data-theme="' + name + '"]{' + css + "}" : "";
+}
+
+function rgbOf(hex) {
+    var h = String(hex || "").trim();
+    if (!/^#[0-9a-f]{6}$/i.test(h)) return null;
+    return parseInt(h.substr(1, 2), 16) + "," +
+        parseInt(h.substr(3, 2), 16) + "," +
+        parseInt(h.substr(5, 2), 16);
 }
 
 /* ==========================================================================
@@ -2719,6 +2895,7 @@ document.addEventListener("click", function (e) {
     if (t.closest("#drawer-close") || t.closest("#drawer-veil")) { drawer(false); return; }
     if (t.closest("#to-top")) { e.preventDefault(); scrollToTop(); return; }
 
+    if (t.closest("#theme-toggle")) { e.preventDefault(); cycleTheme(); return; }
     if (t.closest("[data-resume-print]")) { e.preventDefault(); window.print(); return; }
 
     // Category chips repaint the grid in place; no navigation involved.

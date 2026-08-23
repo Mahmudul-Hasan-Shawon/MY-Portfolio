@@ -4,6 +4,25 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Lets form controls, scrollbars and the like follow the palette. -->
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- Sets the palette before the first paint. Without this a returning
+         visitor who chose light would see a dark flash while site.js and the
+         sheet are still loading. Deliberately tiny, inline and blocking:
+         "site-theme" must stay in step with THEME_KEY in site.js. -->
+    <script>
+        (function () {
+            try {
+                var s = localStorage.getItem("site-theme");
+                document.documentElement.setAttribute("data-theme",
+                    (s === "dark" || s === "light") ? s
+                        : (window.matchMedia &&
+                            window.matchMedia("(prefers-color-scheme: light)").matches
+                            ? "light" : "dark"));
+            } catch (e) { /* attribute already on <html> as a fallback */ }
+        })();
+    </script>
 
     <!-- All of the tags below are overwritten at runtime from the ⚙ Config sheet -->
     <title>Shawon | Automation Engineer</title>
@@ -96,6 +115,9 @@
                 <span class="status-chip" id="status-chip" hidden>
                     <span class="status-dot"></span><span id="status-text"></span>
                 </span>
+                <button class="icon-btn" id="theme-toggle" type="button" aria-label="Change theme" hidden>
+                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                </button>
                 <a class="btn btn-accent btn-sm" id="nav-cta" href="#contact">Contact</a>
                 <button class="icon-btn nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">
                     <span></span><span></span>
