@@ -3389,3 +3389,787 @@ a.contact-line:hover {
         text-align: left;
     }
 }
+
+
+/* ==========================================================================
+   RÉSUMÉ — the unlisted page (/resume)
+
+   A document, not a web page: one column, a header band, sections that
+   read top to bottom. Keeps the site's ink canvas, lime accent, serif
+   nameplate and mono telemetry; print swaps the palette for paper.
+   Nothing links here — see resumePath() in site.js.
+   ========================================================================== */
+
+body.on-resume .bg-glow {
+    opacity: .35;
+}
+
+.rz-page {
+    padding-bottom: clamp(3rem, 6vw, 5.5rem);
+}
+
+.rz-shell {
+    max-width: 980px;
+}
+
+/* ── Screen-only control bar ──────────────────────────────── */
+
+.rz-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.4rem;
+}
+
+.rz-flag {
+    color: var(--faint);
+}
+
+.rz-flag::before {
+    background: var(--line);
+}
+
+.rz-bar-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+/* ── The document ─────────────────────────────────────────── */
+
+.rz-doc {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: clamp(1.7rem, 4vw, 3.4rem);
+    box-shadow: var(--sh);
+}
+
+.rz-doc::before,
+.rz-doc::after {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    border: 1px solid var(--accent);
+    opacity: .5;
+}
+
+.rz-doc::before {
+    top: -1px;
+    left: -1px;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.rz-doc::after {
+    bottom: -1px;
+    right: -1px;
+    border-left: 0;
+    border-top: 0;
+}
+
+/* ── Header band ──────────────────────────────────────────── */
+
+.rz-head {
+    display: flex;
+    align-items: flex-start;
+    gap: clamp(1.2rem, 3vw, 2.2rem);
+}
+
+.rz-photo {
+    flex: none;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 1px solid var(--accent-line);
+    box-shadow: 0 0 0 4px var(--accent-dim);
+}
+
+.rz-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.rz-ident {
+    min-width: 0;
+    flex: 1;
+}
+
+.rz-name {
+    font-family: var(--ff-display);
+    font-weight: 400;
+    font-size: clamp(2.1rem, 4.6vw, 3.1rem);
+    line-height: 1.03;
+    letter-spacing: -.015em;
+}
+
+.rz-headline {
+    margin-top: .35rem;
+    font-size: 1.02rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--text);
+}
+
+.rz-tagline {
+    margin-top: .3rem;
+    font-family: var(--ff-mono);
+    font-size: .69rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.rz-summary {
+    margin-top: .9rem;
+    max-width: 66ch;
+    font-size: .93rem;
+    line-height: 1.68;
+    color: var(--muted);
+}
+
+.rz-summary em {
+    color: var(--text);
+    font-style: normal;
+}
+
+.rz-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.6rem;
+    margin-top: 1rem;
+}
+
+.rz-figure {
+    font-family: var(--ff-mono);
+    font-size: .68rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+
+.rz-figure b {
+    font-family: var(--ff-display);
+    font-weight: 400;
+    font-size: 1.25rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--accent);
+    margin-right: .25rem;
+}
+
+/* ── Contact rail ─────────────────────────────────────────── */
+
+.rz-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.5rem;
+    margin-top: 1.5rem;
+    padding: .95rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.rz-c {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--ff-mono);
+    font-size: .72rem;
+    color: var(--muted);
+    word-break: break-word;
+    transition: color .25s var(--ease);
+}
+
+a.rz-c:hover {
+    color: var(--accent);
+}
+
+.rz-c i {
+    color: var(--accent);
+    font-size: .76rem;
+}
+
+/* ── Sections ─────────────────────────────────────────────── */
+
+.rz-body {
+    display: grid;
+    gap: 2.1rem;
+    padding-top: 1.9rem;
+}
+
+.rz-h {
+    margin-bottom: 1.1rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--ff-mono);
+    font-size: .7rem;
+    font-weight: 500;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+/* ── Entries ──────────────────────────────────────────────── */
+
+.rz-entries {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.rz-entry+.rz-entry {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line-soft);
+}
+
+.rz-entry-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.rz-entry-id h3,
+.rz-project h3,
+.rz-edu-item h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+.rz-role-line {
+    margin-top: .16rem;
+    font-size: .87rem;
+    color: var(--muted);
+}
+
+.rz-entry-when {
+    text-align: right;
+    display: grid;
+    gap: .12rem;
+    justify-items: end;
+}
+
+.rz-when {
+    font-family: var(--ff-mono);
+    font-size: .67rem;
+    letter-spacing: .07em;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.rz-span {
+    font-family: var(--ff-mono);
+    font-size: .62rem;
+    letter-spacing: .07em;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.rz-place {
+    font-family: var(--ff-mono);
+    font-size: .62rem;
+    letter-spacing: .06em;
+    color: var(--faint);
+    white-space: nowrap;
+}
+
+.rz-meta {
+    margin-top: .3rem;
+    font-size: .82rem;
+    color: var(--faint);
+}
+
+.rz-p {
+    margin-top: .55rem;
+    font-size: .89rem;
+    line-height: 1.65;
+    color: var(--muted);
+}
+
+.rz-ul {
+    margin: .6rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: .34rem;
+}
+
+.rz-ul li {
+    position: relative;
+    padding-left: 1rem;
+    font-size: .89rem;
+    line-height: 1.62;
+    color: var(--muted);
+}
+
+.rz-ul li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .62em;
+    width: 5px;
+    height: 1px;
+    background: var(--accent);
+}
+
+/* ── Tags ─────────────────────────────────────────────────── */
+
+.rz-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .34rem;
+}
+
+.rz-tags-inline {
+    margin-top: .7rem;
+}
+
+.rz-tags-label {
+    font-family: var(--ff-mono);
+    font-size: .6rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-right: .3rem;
+}
+
+.rz-tag {
+    padding: .24rem .58rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    font-family: var(--ff-mono);
+    font-size: .63rem;
+    letter-spacing: .03em;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+/* ── Technical expertise ──────────────────────────────────── */
+
+.rz-stack-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.rz-stack-row {
+    display: grid;
+    grid-template-columns: 165px minmax(0, 1fr);
+    gap: .3rem 1.2rem;
+    align-items: start;
+}
+
+.rz-stack-row h4 {
+    font-size: .85rem;
+    font-weight: 600;
+    padding-top: .16rem;
+}
+
+/* ── Projects ─────────────────────────────────────────────── */
+
+.rz-projects {
+    display: grid;
+    gap: 1.15rem;
+}
+
+.rz-project+.rz-project {
+    padding-top: 1.15rem;
+    border-top: 1px solid var(--line-soft);
+}
+
+.rz-stack {
+    margin-top: .2rem;
+    font-family: var(--ff-mono);
+    font-size: .68rem;
+    letter-spacing: .04em;
+    color: var(--accent);
+}
+
+/* ── Education + extras ───────────────────────────────────── */
+
+.rz-edu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.15rem 2rem;
+}
+
+.rz-gpa {
+    margin-left: .5rem;
+    font-family: var(--ff-mono);
+    font-size: .64rem;
+    font-weight: 400;
+    letter-spacing: .05em;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.rz-extras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2.1rem;
+}
+
+.rz-ul-plain li {
+    font-size: .87rem;
+}
+
+.rz-detail {
+    display: block;
+    font-size: .78rem;
+    color: var(--faint);
+}
+
+/* ── Foot ─────────────────────────────────────────────────── */
+
+.rz-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2.2rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+    color: var(--faint);
+}
+
+.rz-foot a {
+    color: var(--accent);
+}
+
+.rz-updated {
+    font-family: var(--ff-mono);
+    font-size: .65rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+    .rz-head {
+        flex-direction: column;
+    }
+
+    .rz-entry-when {
+        text-align: left;
+        justify-items: start;
+        flex-direction: row;
+        display: flex;
+        gap: .7rem;
+        flex-wrap: wrap;
+    }
+
+    .rz-stack-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================================================
+   PRINT — the résumé becomes paper
+
+   A4, monochrome, no reliance on the browser's "background graphics"
+   setting. Scroll-reveal is forced open because anything that never
+   entered the viewport is still opacity:0 at print time, and entries are
+   kept from straddling a page break.
+   ========================================================================== */
+
+@media print {
+
+    @page {
+        size: A4;
+        margin: 12mm 12mm 14mm;
+    }
+
+    html,
+    body {
+        background: #fff !important;
+        color: #14161a !important;
+    }
+
+    #site-header,
+    #site-footer,
+    #preloader,
+    #drawer,
+    .drawer-veil,
+    .bg-grid,
+    .bg-glow,
+    .bg-grain,
+    .cursor-glow,
+    #scroll-progress,
+    #to-top,
+    #toast,
+    .skip-link,
+    .rz-bar,
+    .crumbs {
+        display: none !important;
+    }
+
+    [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    main,
+    .section,
+    .page-top,
+    .shell,
+    .rz-shell {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        width: auto !important;
+    }
+
+    /* Monochrome token swap, scoped to the page. */
+    .rz-page {
+        --text: #14161a;
+        --muted: #35383d;
+        --faint: #6d7177;
+        --line: #b9bcc1;
+        --line-soft: #d9dbde;
+        --surface: #fff;
+        --surface-2: #fff;
+        --accent: #14161a;
+        --accent-line: #b9bcc1;
+        --accent-dim: transparent;
+        color: #14161a;
+    }
+
+    .rz-doc {
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        padding: 0 !important;
+    }
+
+    .rz-doc::before,
+    .rz-doc::after {
+        display: none;
+    }
+
+    .rz-doc a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    .rz-photo {
+        width: 78px;
+        height: 78px;
+        box-shadow: none;
+        border-color: #b9bcc1;
+    }
+
+    /* Point sizes so the printer, not the viewport, decides the scale. */
+    .rz-name {
+        font-size: 23pt;
+    }
+
+    .rz-headline {
+        font-size: 11pt;
+    }
+
+    .rz-tagline,
+    .rz-figure,
+    .rz-c {
+        font-size: 7.5pt;
+    }
+
+    .rz-figure b {
+        font-size: 11pt;
+    }
+
+    .rz-summary {
+        font-size: 9.5pt;
+        line-height: 1.5;
+        max-width: none;
+    }
+
+    .rz-h {
+        font-size: 8pt;
+    }
+
+    .rz-entry-id h3,
+    .rz-project h3,
+    .rz-edu-item h3 {
+        font-size: 10.5pt;
+    }
+
+    .rz-role-line {
+        font-size: 9pt;
+    }
+
+    .rz-p,
+    .rz-ul li,
+    .rz-ul-plain li {
+        font-size: 9pt;
+        line-height: 1.45;
+    }
+
+    .rz-when,
+    .rz-span,
+    .rz-place,
+    .rz-stack,
+    .rz-meta,
+    .rz-detail,
+    .rz-tag,
+    .rz-tags-label,
+    .rz-gpa {
+        font-size: 7.5pt;
+    }
+
+    .rz-stack-row h4 {
+        font-size: 9pt;
+    }
+
+    .rz-body {
+        gap: 1.2rem;
+        padding-top: 1.1rem;
+    }
+
+    .rz-entries {
+        gap: .85rem;
+    }
+
+    .rz-entry+.rz-entry,
+    .rz-project+.rz-project {
+        padding-top: .85rem;
+    }
+
+    .rz-tag {
+        background: transparent !important;
+        border-color: #c3c6ca !important;
+    }
+
+    .rz-ul li::before {
+        background: #14161a;
+    }
+
+    /* Keep a job, a project, a degree or a heading whole. */
+    .rz-entry,
+    .rz-project,
+    .rz-edu-item,
+    .rz-stack-row,
+    .rz-sec-extra,
+    .rz-head {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .rz-h {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .rz-foot {
+        margin-top: 1.2rem;
+        font-size: 8pt;
+    }
+}
+
+/* A print sheet is ~186mm wide, so auto-fit would guess a column count from
+   the screen viewport instead. Pin these to two. */
+@media print {
+
+    .rz-edu,
+    .rz-extras {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 1rem 1.8rem !important;
+    }
+}
+
+/* Print rhythm. Screen spacing is generous by design; on paper the same
+   gaps cost a page, so the vertical scale is tightened here without
+   touching type size or the on-screen layout. */
+@media print {
+
+    .rz-contact {
+        margin-top: 1rem;
+        padding: .55rem 0;
+    }
+
+    .rz-summary {
+        margin-top: .55rem;
+    }
+
+    .rz-figures {
+        margin-top: .6rem;
+        gap: .3rem 1.3rem;
+    }
+
+    .rz-body {
+        gap: .95rem;
+        padding-top: 1rem;
+    }
+
+    .rz-h {
+        margin-bottom: .6rem;
+        padding-bottom: .32rem;
+    }
+
+    .rz-entries {
+        gap: .7rem;
+    }
+
+    .rz-entry+.rz-entry,
+    .rz-project+.rz-project {
+        padding-top: .7rem;
+    }
+
+    .rz-p {
+        margin-top: .34rem;
+    }
+
+    .rz-ul {
+        margin-top: .34rem;
+        gap: .2rem;
+    }
+
+    .rz-tags-inline {
+        margin-top: .42rem;
+    }
+
+    .rz-stack-grid {
+        gap: .5rem;
+    }
+
+    .rz-projects {
+        gap: .8rem;
+    }
+
+    .rz-foot {
+        margin-top: .9rem;
+        padding-top: .6rem;
+    }
+}
+
+@media print {
+
+    .rz-body {
+        gap: .78rem;
+    }
+
+    .rz-h {
+        margin-bottom: .5rem;
+    }
+
+    .rz-edu,
+    .rz-extras {
+        gap: .8rem 1.8rem !important;
+    }
+
+    .rz-foot {
+        margin-top: .6rem;
+        padding-top: .45rem;
+    }
+}

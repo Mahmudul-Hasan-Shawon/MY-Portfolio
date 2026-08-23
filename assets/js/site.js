@@ -8,7 +8,7 @@
    2. Everything else is edited in the spreadsheet.
    ========================================================================== */
 
-var API_URL = "https://script.google.com/macros/s/AKfycbxGnquJId3UHVhwMiKIIAoRXlirkHjn3QwbqQSX8ni4WdxqzAuuwAppqe8CUuB_Dn8SDw/exec"; // ← "https://script.google.com/macros/s/AKfy.../exec"
+var API_URL = "https://script.google.com/macros/s/AKfycbxaaCaYpuu5JI0tAsg-tB2PcFlZZTRY0V5rX6_U5M1RsFyG4nj5L8b30oe1aH-9QVDYIQ/exec"; // ← "https://script.google.com/macros/s/AKfy.../exec"
 
 /* ── State ────────────────────────────────────────────────────────────── */
 var CFG = {};      // ⚙ Config          → key/value map
@@ -24,6 +24,8 @@ var EXP = [];      // 🗓 Experience
 var FAQS = [];     // ❓ FAQ
 var SOCIAL = [];   // 🔗 Social Links
 var FORMOPTS = {}; // 📝 Form Options
+var RESUME = {};   // 📄 Resume        → key/value map, like ⚙ Config
+var RXTRA = [];    // 🏅 Resume Extras → grouped list rows
 var LIVE = false;  // true once sheet data has loaded
 
 var FILTER = "All";
@@ -65,6 +67,26 @@ function cfg(key, fallback) {
 function on(key, dflt) {
     var v = cfg(key, dflt === undefined ? "yes" : dflt);
     var s = String(v).trim().toLowerCase();
+    return !(s === "no" || s === "false" || s === "0" || s === "off" || s === "hide" || s === "");
+}
+
+/* 📄 Resume first, ⚙ Config second, argument last. Two lookups rather than
+   one because the résumé sheet is optional: a workbook that predates it
+   still fills the page from Config, and a blank cell on the résumé sheet
+   means "use whatever the site already says" instead of "show nothing". */
+function rcfg(key, fallback) {
+    if (RESUME && RESUME[key] !== undefined && RESUME[key] !== "") return RESUME[key];
+
+    var flat = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+    for (var k in RESUME) {
+        if (String(k).toLowerCase().replace(/[^a-z0-9]/g, "") === flat && RESUME[k] !== "") return RESUME[k];
+    }
+    return cfg(key, fallback);
+}
+
+/* The on()/rcfg() pairing — a résumé toggle that can also be left to Config. */
+function ron(key, dflt) {
+    var s = String(rcfg(key, dflt === undefined ? "yes" : dflt)).trim().toLowerCase();
     return !(s === "no" || s === "false" || s === "0" || s === "off" || s === "hide" || s === "");
 }
 
@@ -176,12 +198,41 @@ function urlHome() { return BASE + "/"; }
 function urlProjects() { return BASE + projBase(); }
 function urlProject(slug) { return BASE + projBase() + "/" + encodeURIComponent(slug); }
 
+/* ── Unlisted résumé ──────────────────────────────────────────────────
+   A fourth page that nothing on the site points at. It never appears in
+   the nav, the drawer, the footer, a breadcrumb or a sitemap, and it asks
+   crawlers not to index it. Two ways in, both of them typed:
+
+     • the path itself            →  /resume
+     • the trigger word, typed on any page, outside a form field
+                                  →  "resume"
+
+   Both are set in ⚙ Config ("Resume Path", "Resume Trigger"), so the
+   path can be changed to something unguessable without touching code. */
+function resumePath() {
+    var p = String(rcfg("resumePath", "/resume")).trim();
+    if (!p) p = "/resume";
+    if (p.charAt(0) !== "/") p = "/" + p;
+    return p.replace(/\/+$/, "");
+}
+
+function urlResume() { return BASE + resumePath(); }
+
+/* Letters and digits only — the buffer that watches for it is built from
+   single printable keypresses, so anything else could never match. */
+function resumeTrigger() {
+    return String(rcfg("resumeTrigger", "resume")).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 /* location.pathname → { name, slug } */
 function parseRoute() {
     var path = location.pathname;
     if (BASE && path.indexOf(BASE) === 0) path = path.slice(BASE.length);
     path = path.replace(/\/index\.html$/, "/");
     if (!path) path = "/";
+
+    var rp = resumePath();
+    if (path === rp || path === rp + "/") return { name: "resume", slug: "" };
 
     var pb = projBase();
     if (path === pb || path === pb + "/") return { name: "projects", slug: "" };
@@ -510,7 +561,14 @@ var DEMO = {
         projectType: ["Sheets automation", "Apps Script web app", "Web scraping", "Gmail automation", "Browser extension", "Website / web app", "Something else"],
         timeline: ["ASAP", "Within 2 weeks", "This month", "Flexible"],
         budget: ["Under $250", "$250 – $750", "$750 – $2,000", "$2,000+", "Not sure yet"]
-    }
+    },
+    resume: {
+        experienceTitle: "Experience",
+        projectsTitle: "Selected Projects",
+        skillsTitle: "Technical Expertise",
+        educationTitle: "Education"
+    },
+    resumeExtras: []
 };
 
 /* ==========================================================================
@@ -572,6 +630,8 @@ function apply(d, live) {
     FAQS = pick(d.faq, DEMO.faq);
     SOCIAL = pick(d.social, DEMO.social);
     FORMOPTS = (d.formOptions && Object.keys(d.formOptions).length) ? d.formOptions : DEMO.formOptions;
+    RESUME = (LIVE && d.resume && Object.keys(d.resume).length) ? d.resume : (DEMO.resume || {});
+    RXTRA = pick(d.resumeExtras, DEMO.resumeExtras || []);
 
     SECS = SECS.slice().sort(function (a, b) {
         return (Number(a.order) || 99) - (Number(b.order) || 99);
@@ -698,7 +758,11 @@ function applyMeta() {
 
     // Each page announces itself properly, so a shared project link shows the
     // project rather than the site's front-page blurb.
-    if (ROUTE.name === "projects") {
+    if (ROUTE.name === "resume") {
+        title = cfg("aboutName", cfg("brandName", "Résumé")) + " — Résumé";
+        desc = "";                       // nothing to share; the page is unlisted
+        url = "";                        // and nothing to declare canonical
+    } else if (ROUTE.name === "projects") {
         title = (sec("projects").title || "Projects").replace(/\*/g, "") + " — " + cfg("brandName", "Portfolio");
         desc = sec("projects").subtitle || desc;
         if (url) url = url.replace(/\/$/, "") + projBase();
@@ -729,6 +793,15 @@ function applyMeta() {
         var el = document.getElementById(id);
         if (el && map[id][1]) el.setAttribute(map[id][0], map[id][1]);
     });
+
+    // The résumé asks to be left out of the index; every other page keeps
+    // the default. Written both ways so a back-button hop out of it clears.
+    var robots = document.getElementById("meta-robots");
+    if (robots) {
+        robots.setAttribute("content", ROUTE.name === "resume"
+            ? "noindex, nofollow, noarchive, nosnippet"
+            : "index, follow");
+    }
 }
 
 function applyTheme() {
@@ -789,7 +862,9 @@ function render() {
     renderBrand();
     renderNav();
 
-    if (ROUTE.name === "projects") {
+    if (ROUTE.name === "resume") {
+        $("#main").innerHTML = pageResume();
+    } else if (ROUTE.name === "projects") {
         $("#main").innerHTML = pageProjects();
     } else if (ROUTE.name === "project") {
         var p = findProject(ROUTE.slug);
@@ -797,6 +872,9 @@ function render() {
     } else {
         $("#main").innerHTML = pageHome();
     }
+
+    // Lets the stylesheet strip the ambient layers back on the résumé.
+    document.body.classList.toggle("on-resume", ROUTE.name === "resume");
 
     renderFooter();
     markActiveNav();
@@ -1296,6 +1374,353 @@ function pageMissing(slug) {
         '<a class="btn btn-accent" href="' + esc(urlProjects()) + '" data-route>' +
         'See all projects<i class="fa-solid fa-arrow-right"></i></a>' +
         '</div></div></section>';
+}
+
+/* ==========================================================================
+   RÉSUMÉ  (the unlisted page — see resumePath() above)
+
+   Every word comes from the workbook. 📄 Resume holds the page's own
+   settings and copy; 🏅 Resume Extras holds the line-item blocks
+   (recognition, interests, anything else the sheet invents); the rest is
+   read from the same sheets that build the site — 🗓 Experience, 🚀
+   Projects, 🧠 Skills, 🧰 Tools, 📊 Stats, 🔗 Social Links, ⚙ Config.
+
+   Laid out as a document rather than a web page: one column, a header
+   band, and sections that read top to bottom, so what prints is what the
+   screen shows. Nothing links here from anywhere on the site.
+   ========================================================================== */
+function pageResume() {
+    var name = rcfg("aboutName", cfg("brandName", "Résumé"));
+    var headline = rcfg("headline", rcfg("aboutRole", cfg("role", "")));
+    var tagline = rcfg("tagline", [cfg("role"), cfg("location")].filter(Boolean).join(" · "));
+    var summary = rcfg("summary", cfg("aboutBody", ""));
+    var photo = ron("showPhoto", "yes") ? rcfg("photoUrl", cfg("aboutImageUrl", "")) : "";
+
+    var pdf = rcfg("pdfUrl", cfg("resumeUrl", ""));
+    var note = rcfg("availabilityNote", cfg("availabilityStatus", ""));
+    var updated = rcfg("updated", "");
+    var mail = cfg("email", "");
+
+    return '<article class="section page-top rz-page">' +
+        '<div class="shell rz-shell">' +
+
+        /* Screen-only controls, stripped from the printed sheet. */
+        '<div class="rz-bar">' +
+        '<span class="mono-label rz-flag"><i class="fa-solid fa-lock"></i> unlisted · not indexed</span>' +
+        '<div class="rz-bar-actions">' +
+        (pdf ? '<a class="btn btn-ghost btn-sm" href="' + esc(pdf) + '" target="_blank" rel="noopener">' +
+            '<i class="fa-solid fa-file-arrow-down"></i>PDF</a>' : '') +
+        '<button class="btn btn-ghost btn-sm" type="button" data-resume-print>' +
+        '<i class="fa-solid fa-print"></i>Print / Save as PDF</button>' +
+        '<a class="btn btn-accent btn-sm" href="' + esc(urlHome()) + '">' +
+        '<i class="fa-solid fa-arrow-left"></i>Back to site</a>' +
+        '</div></div>' +
+
+        '<div class="rz-doc" id="resume-sheet">' +
+
+        /* ── Header band ──────────────────────────────────────────── */
+        '<header class="rz-head">' +
+        (photo ? '<div class="rz-photo"><img src="' + esc(resolveAsset(photo)) + '" alt="' + esc(name) + '"></div>' : '') +
+        '<div class="rz-ident">' +
+        '<h1 class="rz-name">' + esc(name) + '</h1>' +
+        (headline ? '<p class="rz-headline">' + esc(headline) + '</p>' : '') +
+        (tagline ? '<p class="rz-tagline">' + esc(tagline) + '</p>' : '') +
+        (summary ? '<p class="rz-summary">' + markup(summary) + '</p>' : '') +
+        rzFigures() +
+        '</div>' +
+        '</header>' +
+
+        '<div class="rz-contact">' + rzContact() + '</div>' +
+
+        /* ── Body ─────────────────────────────────────────────────── */
+        '<div class="rz-body">' +
+        rzHistory() +
+        rzProjects() +
+        rzExpertise() +
+        rzEducation() +
+        rzExtras() +
+        '</div>' +
+
+        ((note || updated || mail) ? '<footer class="rz-foot">' +
+            '<span>' + esc(note) +
+            (note && mail ? ' · ' : '') +
+            (mail ? '<a href="mailto:' + esc(mail) + '">Let\'s connect</a>' : '') + '</span>' +
+            (updated ? '<span class="rz-updated">Updated ' + esc(updated) + '</span>' : '') +
+            '</footer>' : '') +
+
+        '</div></div></article>';
+}
+
+/* ── Section shell ────────────────────────────────────────────────────
+   Dropped whole when its body came back empty, so an unfilled sheet
+   leaves no orphan heading behind. */
+function rzSec(title, body, cls) {
+    if (!body) return "";
+    return '<section class="rz-sec' + (cls ? ' ' + cls : '') + '">' +
+        '<h2 class="rz-h">' + esc(title) + '</h2>' + body + '</section>';
+}
+
+/* ── Dates ────────────────────────────────────────────────────────────
+   The sheet writes dates however it likes — "2019", "Mar 2023",
+   "Present". Both forms are parsed so a tenure can be shown beside the
+   range; anything unparseable simply shows no tenure rather than a
+   wrong one. */
+var RZ_MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+function rzDate(v) {
+    var s = String(v || "").trim();
+    if (!s) return null;
+
+    var now = new Date();
+    if (/^(present|current|now|ongoing|to date)$/i.test(s)) {
+        return { y: now.getFullYear(), m: now.getMonth(), coarse: false };
+    }
+
+    var md = s.match(/^([A-Za-z]{3,})\.?\s+(\d{4})$/);
+    if (md) {
+        var mi = RZ_MONTHS.indexOf(md[1].slice(0, 3).toLowerCase());
+        if (mi > -1) return { y: parseInt(md[2], 10), m: mi, coarse: false };
+    }
+
+    var yd = s.match(/^(\d{4})$/);
+    if (yd) return { y: parseInt(yd[1], 10), m: 0, coarse: true };
+
+    return null;
+}
+
+function rzSpan(start, end) {
+    var a = rzDate(start), b = rzDate(end);
+    if (!a || !b) return "";
+
+    // A year-only start can't honestly claim months: "2026 – Present" would
+    // otherwise read "8 mos" purely because January was assumed.
+    if (a.coarse) {
+        var yrs = b.y - a.y;
+        return yrs >= 1 ? yrs + " yr" + (yrs > 1 ? "s" : "") : "";
+    }
+
+    var months = (b.y - a.y) * 12 + (b.m - a.m) + 1;
+    if (months < 1) return "";
+
+    var y = Math.floor(months / 12), m = months % 12, out = [];
+    if (y) out.push(y + " yr" + (y > 1 ? "s" : ""));
+    if (m) out.push(m + " mo" + (m > 1 ? "s" : ""));
+    return out.join(" ");
+}
+
+/* ── Experience ───────────────────────────────────────────────────────
+   🗓 Experience split on its Type column. Education is peeled off into
+   its own block further down; anything the sheet invents ("Volunteering")
+   keeps its own label and gets its own block. */
+function rzGroups() {
+    var order = [], byLabel = {};
+
+    EXP.filter(function (e) { return on2(e.show); }).forEach(function (e) {
+        var raw = String(e.type || "").trim();
+        var k = raw.toLowerCase();
+        var label = (!raw || /^(work|job|employment|experience|career|freelance)/.test(k))
+            ? "__work"
+            : /^(edu|study|academic|school|degree)/.test(k) ? "__edu" : raw;
+
+        if (!byLabel[label]) { byLabel[label] = { label: label, items: [] }; order.push(label); }
+        byLabel[label].items.push(e);
+    });
+
+    return order.map(function (l) { return byLabel[l]; });
+}
+
+function rzHistory() {
+    var out = "";
+
+    rzGroups().forEach(function (g) {
+        if (g.label === "__edu") return;
+        var title = g.label === "__work" ? rcfg("experienceTitle", "Experience") : g.label;
+        out += rzSec(title, '<div class="rz-entries">' + g.items.map(rzJob).join("") + '</div>');
+    });
+
+    return out;
+}
+
+function rzJob(e) {
+    var when = [e.start, e.end].filter(Boolean).join(" – ");
+    var span = rzSpan(e.start, e.end);
+    var tags = listOf(e.tags);
+
+    return '<article class="rz-entry">' +
+        '<div class="rz-entry-head">' +
+        '<div class="rz-entry-id">' +
+        '<h3>' + esc(e.org || e.title) + '</h3>' +
+        (e.org ? '<p class="rz-role-line">' + esc(e.title) + '</p>' : '') +
+        '</div>' +
+        '<div class="rz-entry-when">' +
+        (when ? '<span class="rz-when">' + esc(when) + '</span>' : '') +
+        (span ? '<span class="rz-span">' + esc(span) + '</span>' : '') +
+        (e.location ? '<span class="rz-place">' + esc(e.location) + '</span>' : '') +
+        '</div>' +
+        '</div>' +
+        (e.meta ? '<p class="rz-meta">' + esc(e.meta) + '</p>' : '') +
+        rzBullets(e.description) +
+        (tags.length ? '<div class="rz-tags rz-tags-inline">' +
+            '<span class="rz-tags-label">Stack</span>' +
+            tags.map(function (t) { return '<span class="rz-tag">' + esc(t) + '</span>'; }).join("") +
+            '</div>' : '') +
+        '</article>';
+}
+
+/* A description holding several lines reads as bullets; a single line
+   stays a paragraph rather than a lone stranded bullet. */
+function rzBullets(text) {
+    var ls = lines(text);
+    if (!ls.length) return "";
+    if (ls.length === 1) return '<p class="rz-p">' + esc(ls[0]) + '</p>';
+
+    return '<ul class="rz-ul">' + ls.map(function (l) {
+        return '<li>' + esc(l.replace(/^[-•·*]\s*/, "")) + '</li>';
+    }).join("") + '</ul>';
+}
+
+/* ── Selected projects ────────────────────────────────────────────── */
+function rzProjects() {
+    var all = PROJECTS.filter(function (p) { return on2(p.show) && p.title; });
+    if (!all.length) return "";
+
+    var n = parseInt(rcfg("projectsCount", "4"), 10);
+    if (isNaN(n) || n < 1) n = 4;
+
+    var list = all.filter(isFeatured)
+        .concat(all.filter(function (p) { return !isFeatured(p); }))
+        .slice(0, n);
+
+    return rzSec(rcfg("projectsTitle", "Selected Projects"),
+        '<div class="rz-projects">' + list.map(function (p) {
+            var tags = listOf(p.tags).slice(0, 6);
+            var meta = [p.client, p.year].filter(Boolean).join(" · ");
+            return '<article class="rz-project">' +
+                '<div class="rz-entry-head">' +
+                '<h3>' + esc(p.title) + '</h3>' +
+                (meta ? '<span class="rz-when">' + esc(meta) + '</span>' : '') +
+                '</div>' +
+                (tags.length ? '<p class="rz-stack">' + esc(tags.join(" · ")) + '</p>' : '') +
+                (p.summary ? '<p class="rz-p">' + esc(p.summary) + '</p>' : '') +
+                '</article>';
+        }).join("") + '</div>');
+}
+
+/* ── Technical expertise ──────────────────────────────────────────────
+   🧠 Skills categories become labelled tag rows; 🧰 Tools joins them as
+   a final row so the whole stack reads in one block. */
+function rzExpertise() {
+    var rows = SKILLS.filter(function (s) { return on2(s.show) && s.category; }).map(function (s) {
+        return { label: s.category, items: listOf(s.items) };
+    });
+
+    if (ron("showTools", "yes")) {
+        var tools = TOOLS.filter(function (t) { return on2(t.show) && t.name; })
+            .map(function (t) { return t.name; });
+        if (tools.length) rows.push({ label: rcfg("toolsLabel", "Tools & Platforms"), items: tools });
+    }
+
+    rows = rows.filter(function (r) { return r.items.length; });
+    if (!rows.length) return "";
+
+    return rzSec(rcfg("skillsTitle", "Technical Expertise"),
+        '<div class="rz-stack-grid">' + rows.map(function (r) {
+            return '<div class="rz-stack-row">' +
+                '<h4>' + esc(r.label) + '</h4>' +
+                '<div class="rz-tags">' + r.items.map(function (i) {
+                    return '<span class="rz-tag">' + esc(i) + '</span>';
+                }).join("") + '</div>' +
+                '</div>';
+        }).join("") + '</div>');
+}
+
+/* ── Education ────────────────────────────────────────────────────── */
+function rzEducation() {
+    var g = null;
+    rzGroups().forEach(function (x) { if (x.label === "__edu") g = x; });
+    if (!g) return "";
+
+    // Résumés normally list the degree, not an essay about it. The full
+    // description stays in the sheet and on the site's Experience section;
+    // 📄 Resume → "Education Detail: Yes" brings it back here.
+    var detail = ron("educationDetail", "no");
+
+    return rzSec(rcfg("educationTitle", "Education"),
+        '<div class="rz-edu">' + g.items.map(function (e) {
+            var when = [e.start, e.end].filter(Boolean).join(" – ");
+            return '<article class="rz-edu-item">' +
+                '<div class="rz-entry-head">' +
+                '<h3>' + esc(e.title) + (e.meta ? '<span class="rz-gpa">' + esc(e.meta) + '</span>' : '') + '</h3>' +
+                (when ? '<span class="rz-when">' + esc(when) + '</span>' : '') +
+                '</div>' +
+                (e.org ? '<p class="rz-role-line">' + esc([e.org, e.location].filter(Boolean).join(" · ")) + '</p>' : '') +
+                (detail && e.description ? '<p class="rz-p">' + esc(lines(e.description).join(" ")) + '</p>' : '') +
+                '</article>';
+        }).join("") + '</div>');
+}
+
+/* ── 🏅 Resume Extras ─────────────────────────────────────────────────
+   Whatever the sheet groups together becomes a block, in the order the
+   groups first appear. Two blocks sit side by side on a wide screen. */
+function rzExtras() {
+    var order = [], byGroup = {};
+
+    RXTRA.filter(function (r) { return on2(r.show) && r.item; }).forEach(function (r) {
+        var g = String(r.group || "Highlights").trim();
+        if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+        byGroup[g].push(r);
+    });
+
+    if (!order.length) return "";
+
+    return '<div class="rz-extras">' + order.map(function (g) {
+        return rzSec(g, '<ul class="rz-ul rz-ul-plain">' + byGroup[g].map(function (r) {
+            return '<li>' + esc(r.item) +
+                (r.detail ? '<span class="rz-detail">' + esc(r.detail) + '</span>' : '') + '</li>';
+        }).join("") + '</ul>', "rz-sec-extra");
+    }).join("") + '</div>';
+}
+
+/* ── Header pieces ────────────────────────────────────────────────── */
+
+/* 📊 Stats, printed as static figures — the animated counters used on the
+   home page would land on a half-counted number inside a PDF. */
+function rzFigures() {
+    if (!ron("showStats", "yes")) return "";
+    var list = STATS.filter(function (s) { return on2(s.show) && s.value; }).slice(0, 4);
+    if (!list.length) return "";
+
+    return '<div class="rz-figures">' + list.map(function (s) {
+        return '<span class="rz-figure"><b>' + esc(s.value) + '</b> ' + esc(s.label || "") + '</span>';
+    }).join("") + '</div>';
+}
+
+function rzContact() {
+    var items = [];
+    var loc = cfg("location"), mail = cfg("email"), wa = cfg("whatsappNumber"), site = cfg("siteUrl");
+
+    if (loc) items.push(["fa-solid fa-location-dot", esc(loc), ""]);
+    if (mail) items.push(["fa-solid fa-envelope", esc(mail), "mailto:" + mail]);
+    if (wa) items.push(["fa-solid fa-phone", esc(wa), "tel:" + String(wa).replace(/[^\d+]/g, "")]);
+    if (site) items.push(["fa-solid fa-globe", esc(rzHost(site)), site]);
+
+    SOCIAL.filter(function (s) { return on2(s.show) && s.url; }).forEach(function (s) {
+        items.push([icon(s.icon, "fa-solid fa-link"), esc(rzHost(s.url)), s.url, s.platform]);
+    });
+
+    return items.map(function (it) {
+        var body = '<i class="' + esc(it[0]) + '" aria-hidden="true"></i><span>' + it[1] + '</span>';
+        return it[2]
+            ? '<a class="rz-c" href="' + esc(it[2]) + '"' +
+            (/^https?:/i.test(it[2]) ? ' target="_blank" rel="noopener"' : '') +
+            (it[3] ? ' title="' + esc(it[3]) + '"' : '') + '>' + body + '</a>'
+            : '<span class="rz-c">' + body + '</span>';
+    }).join("");
+}
+
+/* A printed résumé reads better as "github.com/name" than as a full URL. */
+function rzHost(url) {
+    return String(url || "").replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
 }
 
 function crumbs(items) {
@@ -1906,6 +2331,8 @@ document.addEventListener("click", function (e) {
     if (t.closest("#drawer-close") || t.closest("#drawer-veil")) { drawer(false); return; }
     if (t.closest("#to-top")) { e.preventDefault(); scrollToTop(); return; }
 
+    if (t.closest("[data-resume-print]")) { e.preventDefault(); window.print(); return; }
+
     // Category chips repaint the grid in place; no navigation involved.
     var chip = t.closest(".filter-btn");
     if (chip) {
@@ -1965,6 +2392,34 @@ window.addEventListener("popstate", function () {
 document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
     if ($("#drawer") && $("#drawer").classList.contains("show")) drawer(false);
+});
+
+/* ── The typed way in ─────────────────────────────────────────────────
+   Watches for the ⚙ Config trigger word being typed on any page. Only
+   bare printable keys count, and never while a form field has focus, so
+   writing "resume" into the contact message does nothing. The buffer is
+   only as long as the word itself and clears after a pause, which keeps
+   it from firing on text that merely happens to contain it. */
+var RZ_BUF = "", RZ_TIMER = null;
+
+document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (typeof e.key !== "string" || e.key.length !== 1) return;
+
+    var t = e.target;
+    if (t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName || ""))) return;
+
+    var want = resumeTrigger();
+    if (!want) return;
+
+    RZ_BUF = (RZ_BUF + e.key.toLowerCase()).slice(-want.length);
+
+    clearTimeout(RZ_TIMER);
+    RZ_TIMER = setTimeout(function () { RZ_BUF = ""; }, 1600);
+
+    if (RZ_BUF !== want) return;
+    RZ_BUF = "";
+    if (ROUTE.name !== "resume") go(urlResume());
 });
 
 /* Pointer glow — desktop only, and never when the user prefers less motion. */
