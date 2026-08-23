@@ -2482,7 +2482,7 @@ h4 {
 .stars {
     margin-left: auto;
     color: var(--accent);
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     letter-spacing: 0.1em;
     white-space: nowrap;
     text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 8%, transparent);
