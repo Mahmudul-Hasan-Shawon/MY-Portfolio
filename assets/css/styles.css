@@ -4174,7 +4174,7 @@ a.rz-c:hover {
     font-size: calc(.715rem * var(--rz-scale, 1));
     letter-spacing: .04em;
     white-space: nowrap;
-    color: var(--rz-ink-2);
+    color: var(--accent);
 }
 
 .rz-sub {
@@ -4263,14 +4263,14 @@ a.rz-c:hover {
 .rz-tag {
     display: inline-block;
     padding: .2rem .5rem;
-    border: 1px solid var(--rz-line);
+    border: 1px solid var(--accent-dim);
     border-radius: 5px;
-    background: var(--rz-chip);
+    background: var(--accent-dim);
     font-family: var(--ff-mono, ui-monospace, monospace);
     font-size: calc(.665rem * var(--rz-scale, 1));
     line-height: 1.4;
     letter-spacing: .02em;
-    color: var(--rz-ink-2);
+    color: var(--accent);
     white-space: nowrap;
 }
 
