@@ -15,6 +15,11 @@
 :root {
     /* ── Surface ─────────────────────────────────────────── */
     --bg: #08090B;
+    /* The same colour at zero alpha. A gradient running to the CSS
+       keyword `transparent` interpolates toward transparent BLACK, which
+       greys the midpoint — invisible on ink, an obvious dark smear on
+       paper. Fades must run to this instead. */
+    --bg-0: rgba(8, 9, 11, 0);
     --bg-2: #0C0E11;
     --surface: #101317;
     --surface-2: #161A1F;
@@ -68,6 +73,7 @@
 /* Light mode — set "Theme Mode: light" in the Config sheet */
 [data-theme="light"] {
     --bg: #F7F6F2;
+    --bg-0: rgba(247, 246, 242, 0);
     --bg-2: #FFFFFF;
     --surface: #FFFFFF;
     --surface-2: #F1EFE9;
@@ -1055,13 +1061,16 @@ h4 {
     }
 }
 
+/* ── Burger ───────────────────────────────────────────────────────────
+   Two bars that fold into a cross. The bars are 1.5px tall with a 5px gap,
+   so each has to travel (5 + 1.5) / 2 = 3.25px to meet in the middle. */
 .nav-burger {
     display: none;
     flex-direction: column;
+    justify-content: center;
     gap: 5px;
     align-items: center;
     margin-left: auto;
-    /* ⬅️ Pushes burger to the right */
 }
 
 .nav-burger span {
@@ -1069,19 +1078,34 @@ h4 {
     height: 1.5px;
     background: currentColor;
     border-radius: 2px;
-    transition: transform .3s var(--ease), opacity .3s;
+    transition: transform .38s var(--ease-out), opacity .25s;
 }
 
-/* ── Drawer ──────────────────────────────────────────────── */
+.nav-burger[aria-expanded="true"] span:first-child {
+    transform: translateY(3.25px) rotate(45deg);
+}
+
+.nav-burger[aria-expanded="true"] span:last-child {
+    transform: translateY(-3.25px) rotate(-45deg);
+}
+
+/* ── Drawer ──────────────────────────────────────────────────────────
+   A panel rather than a list: the site's own accent wash across the top,
+   oversized targets, and links that arrive in sequence as it slides in. */
 
 .drawer-veil {
     position: fixed;
     inset: 0;
     z-index: 140;
-    background: rgba(0, 0, 0, .65);
-    backdrop-filter: blur(4px);
+    background: rgba(6, 7, 9, .58);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     opacity: 0;
-    transition: opacity .35s var(--ease);
+    transition: opacity .4s var(--ease);
+}
+
+[data-theme="light"] .drawer-veil {
+    background: rgba(24, 26, 30, .34);
 }
 
 .drawer-veil.show {
@@ -1094,58 +1118,217 @@ h4 {
     right: 0;
     bottom: 0;
     z-index: 150;
-    width: min(86vw, 340px);
-    background: var(--bg-2);
+    width: min(88vw, 372px);
+    background:
+        radial-gradient(26rem 16rem at 100% 0%, var(--accent-dim), transparent 68%),
+        var(--bg-2);
     border-left: 1px solid var(--line);
-    padding: 1.2rem;
+    border-radius: var(--r-lg) 0 0 var(--r-lg);
+    box-shadow: -30px 0 70px -30px rgba(0, 0, 0, .6);
+    /* Clears the notch on iOS without pushing the panel in on everything else. */
+    padding: max(1.15rem, env(safe-area-inset-top)) 1.25rem
+             max(1.15rem, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    gap: 1.4rem;
-    transform: translateX(100%);
-    transition: transform .45s var(--ease-out);
+    gap: 1.1rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: translateX(101%);
+    transition: transform .5s var(--ease-out);
+}
+
+[data-theme="light"] #drawer {
+    box-shadow: -30px 0 60px -34px rgba(20, 22, 26, .45);
 }
 
 #drawer.show {
     transform: none;
 }
 
+/* ── Head ─────────────────────────────────────────────────────────── */
 .drawer-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: .75rem;
+    padding-bottom: .9rem;
+    border-bottom: 1px solid var(--line-soft);
 }
 
+.drawer-brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+}
+
+.drawer-brand .brand-mark {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid var(--accent-line);
+    border-radius: var(--r-sm);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-family: var(--ff-mono);
+    font-size: .68rem;
+    overflow: hidden;
+}
+
+.drawer-brand .brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.drawer-brand b {
+    display: block;
+    font-size: .9rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text);
+}
+
+.drawer-brand small {
+    display: block;
+    font-family: var(--ff-mono);
+    font-size: .6rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+
+#drawer-close {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+}
+
+/* ── Links ────────────────────────────────────────────────────────── */
 .drawer-links {
     display: grid;
     gap: .1rem;
 }
 
 .drawer-links a {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: .95rem .2rem;
-    border-bottom: 1px solid var(--line-soft);
-    font-size: 1.05rem;
+    gap: .85rem;
+    padding: .92rem .7rem;
+    border-radius: var(--r-sm);
+    font-size: 1.12rem;
+    font-weight: 300;
+    letter-spacing: -.01em;
     color: var(--muted);
-    transition: color .25s, padding-left .25s;
+    overflow: hidden;
+    transition: color .25s var(--ease), background-color .25s var(--ease);
 }
 
-.drawer-links a:hover {
-    color: var(--accent);
-    padding-left: .6rem;
+/* The accent bar wipes in from the left rather than the text jumping. */
+.drawer-links a::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 2px;
+    height: 0;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: translateY(-50%);
+    transition: height .3s var(--ease-out);
 }
 
-.drawer-links a span.idx {
+.drawer-links a .idx {
     font-family: var(--ff-mono);
     font-size: .62rem;
     color: var(--faint);
+    transition: color .25s;
 }
 
+.drawer-links a .label {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.drawer-links a .go {
+    font-size: .7rem;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity .28s var(--ease), transform .28s var(--ease-out);
+}
+
+.drawer-links a:hover,
+.drawer-links a:focus-visible,
+.drawer-links a.active {
+    color: var(--text);
+    background: var(--surface-2);
+}
+
+.drawer-links a:hover::before,
+.drawer-links a:focus-visible::before,
+.drawer-links a.active::before {
+    height: 46%;
+}
+
+.drawer-links a:hover .idx,
+.drawer-links a.active .idx {
+    color: var(--accent);
+}
+
+.drawer-links a:hover .go,
+.drawer-links a:focus-visible .go {
+    opacity: 1;
+    transform: none;
+}
+
+/* Links arrive one after another behind the sliding panel. --i is written
+   onto each anchor by renderNav(). */
+@media (prefers-reduced-motion: no-preference) {
+    #drawer.show .drawer-links a {
+        animation: drawer-item .46s var(--ease-out) both;
+        animation-delay: calc(80ms + var(--i, 0) * 42ms);
+    }
+}
+
+@keyframes drawer-item {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ── Foot ─────────────────────────────────────────────────────────── */
 .drawer-foot {
     margin-top: auto;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--line-soft);
     display: grid;
-    gap: 1rem;
+    gap: .9rem;
+}
+
+.drawer-theme {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .1rem .1rem .2rem;
+}
+
+.drawer-theme span {
+    font-family: var(--ff-mono);
+    font-size: .62rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--faint);
 }
 
 .social-row {
@@ -2197,12 +2380,12 @@ h4 {
 
 .tst-scroll-container::before {
     left: 0;
-    background: linear-gradient(to right, var(--bg), transparent);
+    background: linear-gradient(to right, var(--bg), var(--bg-0));
 }
 
 .tst-scroll-container::after {
     right: 0;
-    background: linear-gradient(to left, var(--bg), transparent);
+    background: linear-gradient(to left, var(--bg), var(--bg-0));
 }
 
 @keyframes tstScroll {
@@ -4419,5 +4602,38 @@ a.rz-c:hover {
 
     a[href]::after {
         content: "" !important;
+    }
+}
+
+
+/* ── Mobile menu ──────────────────────────────────────────────────────
+   Appended last so it wins over the earlier breakpoint blocks. */
+@media (max-width: 1020px) {
+
+    /* One theme control at a time: the header loses it, the drawer gains it. */
+    #site-header #theme-toggle {
+        display: none;
+    }
+}
+
+@media (min-width: 1021px) {
+    .drawer-theme {
+        display: none;
+    }
+}
+
+/* Full bleed only on genuinely small handsets. At 390px — an iPhone 14 —
+   keeping a sliver of the page visible behind the panel reads as a layer
+   over the site rather than a separate screen. */
+@media (max-width: 360px) {
+    #drawer {
+        width: 100vw;
+        border-radius: 0;
+        border-left: 0;
+    }
+
+    .drawer-links a {
+        font-size: 1.05rem;
+        padding: .85rem .6rem;
     }
 }

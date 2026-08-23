@@ -130,11 +130,23 @@
     <div class="drawer-veil" id="drawer-veil" hidden></div>
     <aside id="drawer" aria-label="Menu" data-lenis-prevent hidden>
         <div class="drawer-head">
-            <span class="mono-label">menu</span>
+            <span class="drawer-brand">
+                <span class="brand-mark" id="drawer-mark">—</span>
+                <span>
+                    <b id="drawer-name">Portfolio</b>
+                    <small id="drawer-sub"></small>
+                </span>
+            </span>
             <button class="icon-btn" id="drawer-close" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <nav class="drawer-links" id="drawer-links"></nav>
         <div class="drawer-foot">
+            <div class="drawer-theme">
+                <span id="drawer-theme-label">Theme</span>
+                <button class="icon-btn" id="drawer-theme-toggle" type="button" aria-label="Change theme">
+                    <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                </button>
+            </div>
             <div class="social-row" id="drawer-social"></div>
             <a class="btn btn-accent btn-block" href="#contact" data-close-drawer>Start a project</a>
         </div>

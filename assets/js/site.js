@@ -916,21 +916,29 @@ function cycleTheme() {
 }
 
 function paintThemeToggle(t) {
-    var btn = $("#theme-toggle");
-    if (!btn) return;
-
-    if (!themeToggleOn()) { btn.setAttribute("hidden", ""); return; }
-    btn.removeAttribute("hidden");
-
     var auto = !themeSaved() && themeMode() === "auto";
     var icon = auto ? "fa-circle-half-stroke" : (t === "light" ? "fa-sun" : "fa-moon");
     var label = auto ? cfg("themeAutoLabel", "Theme: following your system")
         : (t === "light" ? cfg("themeLightLabel", "Theme: light")
             : cfg("themeDarkLabel", "Theme: dark"));
 
-    btn.innerHTML = '<i class="fa-solid ' + icon + '" aria-hidden="true"></i>';
-    btn.setAttribute("aria-label", label);
-    btn.setAttribute("title", label);
+    // Two buttons, one state: the header's above the burger breakpoint, the
+    // drawer's below it. Only one is ever on screen, but both are kept
+    // current so neither shows a stale icon when the viewport changes.
+    ["#theme-toggle", "#drawer-theme-toggle"].forEach(function (sel) {
+        var btn = $(sel);
+        if (!btn) return;
+        if (!themeToggleOn()) { btn.setAttribute("hidden", ""); return; }
+        btn.removeAttribute("hidden");
+        btn.innerHTML = '<i class="fa-solid ' + icon + '" aria-hidden="true"></i>';
+        btn.setAttribute("aria-label", label);
+        btn.setAttribute("title", label);
+    });
+
+    var row = $(".drawer-theme"), cap = $("#drawer-theme-label");
+    if (row && !themeToggleOn()) row.setAttribute("hidden", "");
+    else if (row) row.removeAttribute("hidden");
+    if (cap) cap.textContent = label.replace(/^Theme:\s*/i, "") || "Theme";
 }
 
 /* A brief cross-fade so the swap doesn't snap. Held to a class for only as
@@ -1022,6 +1030,11 @@ function themeBlock(name, vars, dim, line) {
     }
     var a2 = rgbOf(vars["--accent-2"]);
     if (a2) css += "--accent-2-dim:rgba(" + a2 + "," + dim + ");";
+
+    // Edge fades run to this rather than to `transparent`, which would
+    // interpolate through grey and show as a dark smear on a light page.
+    var bg = rgbOf(vars["--bg"]);
+    if (bg) css += "--bg-0:rgba(" + bg + ",0);";
 
     return css ? '[data-theme="' + name + '"]{' + css + "}" : "";
 }
@@ -1135,12 +1148,27 @@ function renderNav() {
             '>' + esc(i.label) + '</a>';
     }).join("");
 
+    // --i drives the staggered entrance; the chevron and label are separate
+    // elements so each can be animated without touching the other.
     $("#drawer-links").innerHTML = items.map(function (i, k) {
-        return '<a href="' + esc(navHref(i.link)) + '" data-close-drawer>' + esc(i.label) +
-            '<span class="idx">' + pad(k + 1) + '</span></a>';
+        return '<a href="' + esc(navHref(i.link)) + '" data-close-drawer style="--i:' + k + '"' +
+            (on2(i.newTab) && i.newTab ? ' target="_blank" rel="noopener"' : '') + '>' +
+            '<span class="idx">' + pad(k + 1) + '</span>' +
+            '<span class="label">' + esc(i.label) + '</span>' +
+            '<i class="go fa-solid fa-arrow-right" aria-hidden="true"></i>' +
+            '</a>';
     }).join("");
 
     $("#drawer-social").innerHTML = socialHTML(false);
+
+    var dm = $("#drawer-mark"), logo = cfg("logoImageUrl");
+    if (dm) {
+        dm.innerHTML = logo
+            ? '<img src="' + esc(logo) + '" alt="' + esc(cfg("brandName")) + '">'
+            : esc(cfg("brandMark", initials(cfg("brandName", "P"))));
+    }
+    if ($("#drawer-name")) $("#drawer-name").textContent = cfg("brandName", "Portfolio");
+    if ($("#drawer-sub")) $("#drawer-sub").textContent = cfg("brandSub", cfg("role", ""));
 }
 
 /* On /portfolio and /portfolio/<slug> the scroll spy has no matching
@@ -1148,7 +1176,7 @@ function renderNav() {
 function markActiveNav() {
     if (ROUTE.name === "home") return;
     var here = urlProjects();
-    $$("#nav-links a").forEach(function (a) {
+    $$("#nav-links a, #drawer-links a").forEach(function (a) {
         a.classList.toggle("active", a.getAttribute("href") === here);
     });
 }
@@ -2740,18 +2768,36 @@ function onScroll() {
 
 /* ── Drawer ──────────────────────────────────────────────────────────── */
 function drawer(open) {
-    var d = $("#drawer"), v = $("#drawer-veil");
+    var d = $("#drawer"), v = $("#drawer-veil"), b = $("#nav-burger");
+
     if (open) {
         d.hidden = false; v.hidden = false;
+        // A frame between unhiding and adding .show, or the panel would be
+        // painted in its open position and the slide would never run.
         requestAnimationFrame(function () { d.classList.add("show"); v.classList.add("show"); });
         scrollLock(true);
+        setTimeout(function () {
+            var first = $("#drawer-close");
+            if (first && d.classList.contains("show")) first.focus();
+        }, 220);
     } else {
         d.classList.remove("show"); v.classList.remove("show");
         scrollLock(false);
-        setTimeout(function () { d.hidden = true; v.hidden = true; }, 420);
+        // Send focus back where it came from, but only if it is still inside
+        // the panel — a click on a link has already moved it elsewhere.
+        if (b && d.contains(document.activeElement)) b.focus();
+        setTimeout(function () { d.hidden = true; v.hidden = true; }, 520);
     }
-    $("#nav-burger").setAttribute("aria-expanded", open ? "true" : "false");
+
+    if (b) b.setAttribute("aria-expanded", open ? "true" : "false");
 }
+
+/* Widening past the burger breakpoint leaves the panel open but off-screen,
+   with the page still scroll-locked. Close it instead. */
+window.addEventListener("resize", function () {
+    var d = $("#drawer");
+    if (d && d.classList.contains("show") && window.innerWidth > 1020) drawer(false);
+});
 
 /* ── Project lookup ──────────────────────────────────────────────────── */
 function findProject(slug) {
@@ -2895,7 +2941,9 @@ document.addEventListener("click", function (e) {
     if (t.closest("#drawer-close") || t.closest("#drawer-veil")) { drawer(false); return; }
     if (t.closest("#to-top")) { e.preventDefault(); scrollToTop(); return; }
 
-    if (t.closest("#theme-toggle")) { e.preventDefault(); cycleTheme(); return; }
+    if (t.closest("#theme-toggle") || t.closest("#drawer-theme-toggle")) {
+        e.preventDefault(); cycleTheme(); return;
+    }
     if (t.closest("[data-resume-print]")) { e.preventDefault(); window.print(); return; }
 
     // Category chips repaint the grid in place; no navigation involved.
