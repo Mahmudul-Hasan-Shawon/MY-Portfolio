@@ -3394,320 +3394,538 @@ a.contact-line:hover {
 /* ==========================================================================
    RÉSUMÉ — the unlisted page (/resume)
 
-   A document, not a web page: one column, a header band, sections that
-   read top to bottom. Keeps the site's ink canvas, lime accent, serif
-   nameplate and mono telemetry; print swaps the palette for paper.
-   Nothing links here — see resumePath() in site.js.
+   A typeset document rather than a web page. Section headings sit in a left
+   rail so the reading column keeps a comfortable measure; everything else
+   runs in one column, top to bottom, so what prints is what the screen shows.
+
+   Three themes, chosen by 📄 Resume → "Resume Theme" and written onto both
+   <body> and the article by site.js:
+
+     paper  (default)  white sheet, near-black ink, monochrome — reads the
+                       same on screen and on paper, and never depends on a
+                       printer having "background graphics" switched on
+     dark              the site's ink canvas, for reading in the browser
+     site              inherits the site's own tokens, accent and all
+
+   Sizes hang off three custom properties the sheet can set: --rz-w (sheet
+   width), --rz-label (heading rail) and --rz-scale (type scale). Density
+   multiplies the vertical rhythm through --rz-s.
    ========================================================================== */
 
-body.on-resume .bg-glow {
-    opacity: .35;
+/* ── Page behind the sheet ────────────────────────────────────────────── */
+body.on-resume .bg-grid,
+body.on-resume .bg-grain,
+body.on-resume .cursor-glow {
+    display: none;
 }
 
+body.on-resume .bg-glow {
+    opacity: .3;
+}
+
+body.on-resume[data-rz-theme="paper"] {
+    background: #eceef1;
+}
+
+body.on-resume[data-rz-theme="paper"] .bg-glow {
+    display: none;
+}
+
+body.rz-no-header #site-header {
+    display: none;
+}
+
+body.rz-no-footer #site-footer {
+    display: none;
+}
+
+/* ── Shell ────────────────────────────────────────────────────────────── */
 .rz-page {
-    padding-bottom: clamp(3rem, 6vw, 5.5rem);
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem) clamp(3rem, 7vw, 5.5rem);
+}
+
+body:not(.rz-no-header) .rz-page {
+    padding-top: clamp(5.5rem, 11vw, 8rem);
 }
 
 .rz-shell {
-    max-width: 980px;
+    width: 100%;
+    max-width: var(--rz-w, 880px);
+    margin: 0 auto;
 }
 
-/* ── Screen-only control bar ──────────────────────────────── */
+/* ── Control bar — screen only ────────────────────────────────────────────
+   The bar sits outside the sheet, so it can't borrow the sheet's tokens and
+   must not borrow the site's either: in paper mode the site's ink is light
+   and would vanish against the light page behind it. */
+.rz-page {
+    --rz-bar-ink: #454b55;
+    --rz-bar-line: #d2d7dd;
+    --rz-bar-hover: #16181c;
+    --rz-bar-solid: #16181c;
+    --rz-bar-solid-ink: #fff;
+}
+
+.rz-page[data-rz-theme="dark"],
+.rz-page[data-rz-theme="site"] {
+    --rz-bar-ink: var(--muted, #aab2be);
+    --rz-bar-line: var(--line, #262b33);
+    --rz-bar-hover: var(--accent, #c8f560);
+    --rz-bar-solid: var(--accent, #c8f560);
+    --rz-bar-solid-ink: var(--accent-ink, #0b0d10);
+}
 
 .rz-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1.4rem;
+    gap: .75rem;
+    margin-bottom: 1rem;
 }
 
 .rz-flag {
-    color: var(--faint);
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--rz-bar-ink);
 }
 
-.rz-flag::before {
-    background: var(--line);
+.rz-flag i {
+    font-size: .74em;
+    opacity: .7;
 }
 
-.rz-bar-actions {
+.rz-bar-acts {
     display: flex;
-    gap: .5rem;
     flex-wrap: wrap;
+    gap: .5rem;
 }
 
-/* ── The document ─────────────────────────────────────────── */
+.rz-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .85rem;
+    border: 1px solid var(--rz-bar-line);
+    border-radius: 8px;
+    background: transparent;
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--rz-bar-ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
 
+.rz-btn:hover {
+    border-color: var(--rz-bar-hover);
+    color: var(--rz-bar-hover);
+    background: color-mix(in srgb, var(--rz-bar-hover) 8%, transparent);
+    transform: translateY(-1px);
+}
+
+.rz-btn-solid {
+    border-color: transparent;
+    background: var(--rz-bar-solid);
+    color: var(--rz-bar-solid-ink);
+}
+
+.rz-btn-solid:hover {
+    background: var(--rz-bar-solid);
+    color: var(--rz-bar-solid-ink);
+    filter: brightness(1.1);
+}
+
+.rz-btn i {
+    font-size: .85em;
+    opacity: .8;
+}
+
+/* ── The sheet ────────────────────────────────────────────────────────── */
 .rz-doc {
-    position: relative;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-lg);
-    padding: clamp(1.7rem, 4vw, 3.4rem);
-    box-shadow: var(--sh);
+    --rz-s: 1;
+    --rz-paper: #fff;
+    --rz-ink: #16181c;
+    --rz-ink-2: #3f454e;
+    --rz-ink-3: #757d88;
+    --rz-line: #e0e4e9;
+    --rz-line-soft: #eef1f4;
+    --rz-chip: #f4f6f8;
+    --rz-accent: #1a1d21;
+
+    background: var(--rz-paper);
+    color: var(--rz-ink);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(16, 20, 26, .06), 0 18px 44px -22px rgba(16, 20, 26, .35);
+    padding: clamp(1.8rem, 4.5vw, 3.2rem) clamp(1.5rem, 4.5vw, 3.2rem);
+    font-family: var(--ff-sans, system-ui, sans-serif);
+    font-size: calc(1rem * var(--rz-scale, 1));
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
 
-.rz-doc::before,
-.rz-doc::after {
-    content: "";
-    position: absolute;
-    width: 11px;
-    height: 11px;
-    border: 1px solid var(--accent);
-    opacity: .5;
+.rz-page[data-rz-theme="dark"] .rz-doc {
+    --rz-paper: #101317;
+    --rz-ink: #eaedf2;
+    --rz-ink-2: #aab2be;
+    --rz-ink-3: #7b848f;
+    --rz-line: #262b33;
+    --rz-line-soft: #1c2027;
+    --rz-chip: #191d23;
+    --rz-accent: var(--accent, #c8f560);
+    box-shadow: none;
+    border: 1px solid var(--rz-line);
 }
 
-.rz-doc::before {
-    top: -1px;
-    left: -1px;
-    border-right: 0;
-    border-bottom: 0;
+.rz-page[data-rz-theme="site"] .rz-doc {
+    --rz-paper: var(--surface, #101317);
+    --rz-ink: var(--text, #eaedf2);
+    --rz-ink-2: var(--text, #aab2be);
+    --rz-ink-3: var(--muted, #7b848f);
+    --rz-line: var(--line, #262b33);
+    --rz-line-soft: var(--line, #1c2027);
+    --rz-chip: transparent;
+    --rz-accent: var(--accent, #c8f560);
+    box-shadow: none;
+    border: 1px solid var(--rz-line);
 }
 
-.rz-doc::after {
-    bottom: -1px;
-    right: -1px;
-    border-left: 0;
-    border-top: 0;
+.rz-page[data-rz-density="compact"] .rz-doc {
+    --rz-s: .72;
 }
 
-/* ── Header band ──────────────────────────────────────────── */
+.rz-page[data-rz-density="airy"] .rz-doc {
+    --rz-s: 1.3;
+}
 
-.rz-head {
+/* ── Nameplate ────────────────────────────────────────────────────────── */
+.rz-mast {
     display: flex;
-    align-items: flex-start;
-    gap: clamp(1.2rem, 3vw, 2.2rem);
+    align-items: center;
+    gap: clamp(1rem, 3vw, 1.75rem);
+    padding-bottom: calc(1.35rem * var(--rz-s));
 }
 
-.rz-photo {
-    flex: none;
-    width: 104px;
-    height: 104px;
-    border-radius: 50%;
+.rz-mast[data-align="center"] {
+    flex-direction: column;
+    text-align: center;
+}
+
+.rz-mast[data-align="right"] {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.rz-portrait {
+    flex: 0 0 auto;
+    width: clamp(72px, 12vw, 96px);
+    height: clamp(72px, 12vw, 96px);
     overflow: hidden;
-    border: 1px solid var(--accent-line);
-    box-shadow: 0 0 0 4px var(--accent-dim);
+    display: grid;
+    place-items: center;
+    background: var(--rz-chip);
+    border: 1px solid var(--rz-line);
 }
 
-.rz-photo img {
+.rz-portrait[data-shape="circle"] {
+    border-radius: 50%;
+}
+
+.rz-portrait[data-shape="rounded"] {
+    border-radius: 12px;
+}
+
+.rz-portrait[data-shape="square"] {
+    border-radius: 0;
+}
+
+.rz-portrait img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
 }
 
-.rz-ident {
+.rz-initials {
+    font-family: var(--ff-display, Georgia, serif);
+    font-size: 1.6rem;
+    color: var(--rz-ink-2);
+}
+
+.rz-mast-text {
     min-width: 0;
-    flex: 1;
 }
 
 .rz-name {
-    font-family: var(--ff-display);
-    font-weight: 400;
-    font-size: clamp(2.1rem, 4.6vw, 3.1rem);
-    line-height: 1.03;
-    letter-spacing: -.015em;
+    margin: 0;
+    font-family: var(--ff-display, Georgia, serif);
+    font-size: calc(clamp(1.95rem, 4.6vw, 2.7rem) * var(--rz-scale, 1));
+    font-weight: 500;
+    line-height: 1.06;
+    letter-spacing: -.02em;
+    color: var(--rz-ink);
 }
 
 .rz-headline {
-    margin-top: .35rem;
-    font-size: 1.02rem;
+    margin: .5rem 0 0;
+    font-size: calc(1.02rem * var(--rz-scale, 1));
     font-weight: 600;
-    letter-spacing: -.01em;
-    color: var(--text);
+    line-height: 1.4;
+    color: var(--rz-ink);
+}
+
+.rz-headline em {
+    font-style: normal;
+    color: var(--rz-accent);
 }
 
 .rz-tagline {
-    margin-top: .3rem;
-    font-family: var(--ff-mono);
-    font-size: .69rem;
-    letter-spacing: .16em;
+    margin: .4rem 0 0;
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.7rem * var(--rz-scale, 1));
+    letter-spacing: .13em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--rz-ink-3);
 }
 
-.rz-summary {
-    margin-top: .9rem;
-    max-width: 66ch;
-    font-size: .93rem;
-    line-height: 1.68;
-    color: var(--muted);
+/* ── Contact rule ─────────────────────────────────────────────────────── */
+.rz-contactbar {
+    padding: calc(.85rem * var(--rz-s)) 0;
+    border-top: 1px solid var(--rz-line);
+    border-bottom: 1px solid var(--rz-line);
 }
-
-.rz-summary em {
-    color: var(--text);
-    font-style: normal;
-}
-
-.rz-figures {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem 1.6rem;
-    margin-top: 1rem;
-}
-
-.rz-figure {
-    font-family: var(--ff-mono);
-    font-size: .68rem;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--faint);
-}
-
-.rz-figure b {
-    font-family: var(--ff-display);
-    font-weight: 400;
-    font-size: 1.25rem;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--accent);
-    margin-right: .25rem;
-}
-
-/* ── Contact rail ─────────────────────────────────────────── */
 
 .rz-contact {
     display: flex;
     flex-wrap: wrap;
-    gap: .5rem 1.5rem;
-    margin-top: 1.5rem;
-    padding: .95rem 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+    gap: .4rem 1.4rem;
 }
 
 .rz-c {
     display: inline-flex;
     align-items: center;
-    gap: .5rem;
-    font-family: var(--ff-mono);
-    font-size: .72rem;
-    color: var(--muted);
+    gap: .45rem;
+    font-size: calc(.815rem * var(--rz-scale, 1));
+    line-height: 1.45;
+    color: var(--rz-ink-2);
+    text-decoration: none;
     word-break: break-word;
-    transition: color .25s var(--ease);
 }
 
 a.rz-c:hover {
-    color: var(--accent);
+    color: var(--rz-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .rz-c i {
-    color: var(--accent);
-    font-size: .76rem;
+    font-size: .82em;
+    color: var(--rz-ink-3);
+    width: 1em;
+    text-align: center;
+    flex: 0 0 auto;
 }
 
-/* ── Sections ─────────────────────────────────────────────── */
-
-.rz-body {
-    display: grid;
-    gap: 2.1rem;
-    padding-top: 1.9rem;
+.rz-no-icons .rz-c i {
+    display: none;
 }
 
-.rz-h {
-    margin-bottom: 1.1rem;
-    padding-bottom: .5rem;
-    border-bottom: 1px solid var(--line);
-    font-family: var(--ff-mono);
-    font-size: .7rem;
+/* ── Lead paragraph ───────────────────────────────────────────────────── */
+.rz-leadwrap {
+    padding-top: calc(1.15rem * var(--rz-s));
+}
+
+.rz-lead {
+    margin: 0;
+    max-width: 68ch;
+    font-size: calc(.945rem * var(--rz-scale, 1));
+    line-height: 1.68;
+    color: var(--rz-ink-2);
+}
+
+.rz-lead em {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--rz-ink);
+}
+
+/* ── Figures ──────────────────────────────────────────────────────────── */
+.rz-figrow {
+    padding-top: calc(1.1rem * var(--rz-s));
+}
+
+.rz-figs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 2.2rem;
+}
+
+.rz-fig {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .5rem;
+}
+
+.rz-fig b {
+    font-family: var(--ff-display, Georgia, serif);
+    font-size: calc(1.35rem * var(--rz-scale, 1));
     font-weight: 500;
-    letter-spacing: .2em;
+    line-height: 1;
+    color: var(--rz-ink);
+}
+
+.rz-fig span {
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.66rem * var(--rz-scale, 1));
+    letter-spacing: .11em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--rz-ink-3);
 }
 
-/* ── Entries ──────────────────────────────────────────────── */
-
-.rz-entries {
+/* ── Section: heading rail + reading column ───────────────────────────── */
+.rz-sec {
     display: grid;
-    gap: 1.5rem;
+    grid-template-columns: var(--rz-label, 150px) minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 3vw, 2.25rem);
+    padding-top: calc(1.5rem * var(--rz-s));
+    margin-top: calc(1.5rem * var(--rz-s));
 }
 
-.rz-entry+.rz-entry {
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line-soft);
+.rz-page[data-rz-rules="on"] .rz-sec {
+    border-top: 1px solid var(--rz-line);
 }
 
-.rz-entry-head {
+.rz-sec-label h2 {
+    margin: .15rem 0 0;
+    font-size: calc(.7rem * var(--rz-scale, 1));
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--rz-ink-3);
+}
+
+.rz-sec-body {
+    min-width: 0;
+}
+
+/* ── Entries ──────────────────────────────────────────────────────────── */
+.rz-entries {
+    display: flex;
+    flex-direction: column;
+    gap: calc(1.2rem * var(--rz-s));
+}
+
+.rz-entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.rz-entry-top {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 1rem;
+    gap: .75rem 1.25rem;
     flex-wrap: wrap;
 }
 
-.rz-entry-id h3,
-.rz-project h3,
-.rz-edu-item h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: -.01em;
+.rz-entry-id {
+    min-width: 0;
+    flex: 1 1 60%;
 }
 
-.rz-role-line {
-    margin-top: .16rem;
-    font-size: .87rem;
-    color: var(--muted);
+.rz-entry-id h3 {
+    margin: 0;
+    font-size: calc(1rem * var(--rz-scale, 1));
+    font-weight: 650;
+    line-height: 1.32;
+    letter-spacing: -.005em;
+    color: var(--rz-ink);
+}
+
+.rz-badge {
+    margin-left: .5rem;
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.66rem * var(--rz-scale, 1));
+    font-weight: 400;
+    letter-spacing: .06em;
+    color: var(--rz-ink-3);
+}
+
+.rz-role {
+    margin: .12rem 0 0;
+    font-size: calc(.865rem * var(--rz-scale, 1));
+    line-height: 1.45;
+    color: var(--rz-ink-2);
+}
+
+.rz-stackline {
+    margin: .18rem 0 0;
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.7rem * var(--rz-scale, 1));
+    line-height: 1.5;
+    color: var(--rz-ink-3);
 }
 
 .rz-entry-when {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     text-align: right;
-    display: grid;
-    gap: .12rem;
-    justify-items: end;
+    gap: .1rem;
 }
 
-.rz-when {
-    font-family: var(--ff-mono);
-    font-size: .67rem;
-    letter-spacing: .07em;
-    color: var(--muted);
+.rz-dates {
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.715rem * var(--rz-scale, 1));
+    letter-spacing: .04em;
     white-space: nowrap;
+    color: var(--rz-ink-2);
 }
 
-.rz-span {
-    font-family: var(--ff-mono);
-    font-size: .62rem;
-    letter-spacing: .07em;
-    color: var(--accent);
-    white-space: nowrap;
-}
-
-.rz-place {
-    font-family: var(--ff-mono);
-    font-size: .62rem;
-    letter-spacing: .06em;
-    color: var(--faint);
-    white-space: nowrap;
+.rz-sub {
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.665rem * var(--rz-scale, 1));
+    letter-spacing: .04em;
+    color: var(--rz-ink-3);
 }
 
 .rz-meta {
-    margin-top: .3rem;
-    font-size: .82rem;
-    color: var(--faint);
+    margin: .3rem 0 0;
+    font-size: calc(.8rem * var(--rz-scale, 1));
+    color: var(--rz-ink-3);
 }
 
 .rz-p {
-    margin-top: .55rem;
-    font-size: .89rem;
-    line-height: 1.65;
-    color: var(--muted);
+    margin: .45rem 0 0;
+    max-width: 72ch;
+    font-size: calc(.885rem * var(--rz-scale, 1));
+    line-height: 1.62;
+    color: var(--rz-ink-2);
 }
 
 .rz-ul {
-    margin: .6rem 0 0;
+    margin: .45rem 0 0;
     padding: 0;
     list-style: none;
-    display: grid;
-    gap: .34rem;
+    max-width: 72ch;
 }
 
 .rz-ul li {
     position: relative;
-    padding-left: 1rem;
-    font-size: .89rem;
-    line-height: 1.62;
-    color: var(--muted);
+    padding-left: .95rem;
+    margin-top: .28rem;
+    font-size: calc(.885rem * var(--rz-scale, 1));
+    line-height: 1.58;
+    color: var(--rz-ink-2);
 }
 
 .rz-ul li::before {
@@ -3715,461 +3933,400 @@ a.rz-c:hover {
     position: absolute;
     left: 0;
     top: .62em;
-    width: 5px;
-    height: 1px;
-    background: var(--accent);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--rz-accent);
+    opacity: .55;
 }
 
-/* ── Tags ─────────────────────────────────────────────────── */
+.rz-link {
+    margin: .3rem 0 0;
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.71rem * var(--rz-scale, 1));
+}
 
-.rz-tags {
+.rz-link a {
+    color: var(--rz-ink-3);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rz-line);
+}
+
+.rz-link a:hover {
+    color: var(--rz-accent);
+}
+
+/* ── Tag rows ─────────────────────────────────────────────────────────── */
+.rz-tagrow {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: .34rem;
+    gap: .35rem .4rem;
+    margin-top: .55rem;
 }
 
-.rz-tags-inline {
-    margin-top: .7rem;
-}
-
-.rz-tags-label {
-    font-family: var(--ff-mono);
-    font-size: .6rem;
-    letter-spacing: .18em;
+.rz-taglabel {
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.62rem * var(--rz-scale, 1));
+    letter-spacing: .13em;
     text-transform: uppercase;
-    color: var(--faint);
+    color: var(--rz-ink-3);
     margin-right: .3rem;
 }
 
 .rz-tag {
-    padding: .24rem .58rem;
-    border: 1px solid var(--line);
-    border-radius: var(--r-pill);
-    background: var(--surface-2);
-    font-family: var(--ff-mono);
-    font-size: .63rem;
-    letter-spacing: .03em;
-    color: var(--muted);
+    display: inline-block;
+    padding: .2rem .5rem;
+    border: 1px solid var(--rz-line);
+    border-radius: 5px;
+    background: var(--rz-chip);
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.665rem * var(--rz-scale, 1));
+    line-height: 1.4;
+    letter-spacing: .02em;
+    color: var(--rz-ink-2);
     white-space: nowrap;
 }
 
-/* ── Technical expertise ──────────────────────────────────── */
+/* ── Skills ───────────────────────────────────────────────────────────── */
+.rz-skills {
+    display: flex;
+    flex-direction: column;
+    gap: calc(.85rem * var(--rz-s));
+}
 
-.rz-stack-grid {
+.rz-skill-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.rz-skill-row h4 {
+    margin: 0 0 .3rem;
+    font-size: calc(.815rem * var(--rz-scale, 1));
+    font-weight: 650;
+    color: var(--rz-ink);
+}
+
+.rz-skill-row .rz-tagrow {
+    margin-top: 0;
+}
+
+.rz-skill-list {
+    margin: 0;
+    font-size: calc(.85rem * var(--rz-scale, 1));
+    line-height: 1.55;
+    color: var(--rz-ink-2);
+}
+
+.rz-skills-text .rz-skill-row {
     display: grid;
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .1rem;
 }
 
-.rz-stack-row {
-    display: grid;
-    grid-template-columns: 165px minmax(0, 1fr);
-    gap: .3rem 1.2rem;
-    align-items: start;
-}
-
-.rz-stack-row h4 {
-    font-size: .85rem;
-    font-weight: 600;
-    padding-top: .16rem;
-}
-
-/* ── Projects ─────────────────────────────────────────────── */
-
-.rz-projects {
-    display: grid;
-    gap: 1.15rem;
-}
-
-.rz-project+.rz-project {
-    padding-top: 1.15rem;
-    border-top: 1px solid var(--line-soft);
-}
-
-.rz-stack {
-    margin-top: .2rem;
-    font-family: var(--ff-mono);
-    font-size: .68rem;
-    letter-spacing: .04em;
-    color: var(--accent);
-}
-
-/* ── Education + extras ───────────────────────────────────── */
-
+/* ── Education ────────────────────────────────────────────────────────── */
 .rz-edu {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.15rem 2rem;
+    gap: calc(.9rem * var(--rz-s));
 }
 
-.rz-gpa {
-    margin-left: .5rem;
-    font-family: var(--ff-mono);
-    font-size: .64rem;
-    font-weight: 400;
-    letter-spacing: .05em;
-    color: var(--accent);
-    white-space: nowrap;
-}
-
+/* ── Extras ───────────────────────────────────────────────────────────── */
 .rz-extras {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2.1rem;
+    grid-template-columns: repeat(var(--rz-cols, 2), minmax(0, 1fr));
+    gap: calc(1.1rem * var(--rz-s)) clamp(1.25rem, 3vw, 2.25rem);
 }
 
-.rz-ul-plain li {
-    font-size: .87rem;
+.rz-extra {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    min-width: 0;
+}
+
+.rz-extra h4 {
+    margin: 0 0 .35rem;
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.66rem * var(--rz-scale, 1));
+    font-weight: 500;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--rz-ink-3);
+}
+
+.rz-plain {
+    margin: 0;
+}
+
+.rz-plain li {
+    padding-left: 0;
+    margin-top: .3rem;
+    color: var(--rz-ink);
+    font-size: calc(.865rem * var(--rz-scale, 1));
+    line-height: 1.5;
+}
+
+.rz-plain li::before {
+    display: none;
+}
+
+.rz-plain li a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--rz-line);
+}
+
+.rz-plain li a:hover {
+    color: var(--rz-accent);
 }
 
 .rz-detail {
     display: block;
-    font-size: .78rem;
-    color: var(--faint);
+    margin-top: .05rem;
+    font-size: calc(.775rem * var(--rz-scale, 1));
+    line-height: 1.45;
+    color: var(--rz-ink-3);
 }
 
-/* ── Foot ─────────────────────────────────────────────────── */
-
+/* ── Footer ───────────────────────────────────────────────────────────── */
 .rz-foot {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
     flex-wrap: wrap;
-    margin-top: 2.2rem;
-    padding-top: 1.1rem;
-    border-top: 1px solid var(--line);
-    font-size: .82rem;
-    color: var(--faint);
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem 1.5rem;
+    margin-top: calc(1.75rem * var(--rz-s));
+    padding-top: calc(.85rem * var(--rz-s));
+    border-top: 1px solid var(--rz-line);
+    font-family: var(--ff-mono, ui-monospace, monospace);
+    font-size: calc(.68rem * var(--rz-scale, 1));
+    letter-spacing: .07em;
+    color: var(--rz-ink-3);
 }
 
 .rz-foot a {
-    color: var(--accent);
+    color: var(--rz-accent);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
 }
 
 .rz-updated {
-    font-family: var(--ff-mono);
-    font-size: .65rem;
-    letter-spacing: .12em;
     text-transform: uppercase;
+    letter-spacing: .11em;
 }
 
-@media (max-width: 720px) {
-    .rz-head {
+/* ── Narrow screens ───────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+    .rz-sec {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: .7rem;
+    }
+
+    .rz-sec-label h2 {
+        margin: 0;
+    }
+
+    .rz-mast {
         flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .rz-mast[data-align="center"] {
+        align-items: center;
+        text-align: center;
     }
 
     .rz-entry-when {
+        align-items: flex-start;
         text-align: left;
-        justify-items: start;
         flex-direction: row;
-        display: flex;
-        gap: .7rem;
-        flex-wrap: wrap;
+        gap: .6rem;
     }
 
-    .rz-stack-row {
-        grid-template-columns: 1fr;
+    .rz-extras {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .rz-doc {
+        border-radius: 0;
+        padding: 1.5rem 1.15rem 1.9rem;
+    }
+
+    .rz-page {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .rz-bar {
+        padding: 0 1rem;
     }
 }
 
 /* ==========================================================================
-   PRINT — the résumé becomes paper
-
-   A4, monochrome, no reliance on the browser's "background graphics"
-   setting. Scroll-reveal is forced open because anything that never
-   entered the viewport is still opacity:0 at print time, and entries are
-   kept from straddling a page break.
+   PRINT
+   Monochrome by default so no printer needs "background graphics" enabled.
+   The @page size and margin are written from the sheet by rzStyle().
    ========================================================================== */
-
 @media print {
 
-    @page {
-        size: A4;
-        margin: 12mm 12mm 14mm;
-    }
-
-    html,
-    body {
+    body.on-resume {
         background: #fff !important;
-        color: #14161a !important;
     }
 
-    #site-header,
-    #site-footer,
-    #preloader,
-    #drawer,
-    .drawer-veil,
-    .bg-grid,
-    .bg-glow,
-    .bg-grain,
-    .cursor-glow,
-    #scroll-progress,
-    #to-top,
-    #toast,
-    .skip-link,
-    .rz-bar,
-    .crumbs {
+    body.on-resume #site-header,
+    body.on-resume #site-footer,
+    body.on-resume #to-top,
+    body.on-resume #drawer,
+    body.on-resume .drawer-veil,
+    body.on-resume #scroll-progress,
+    body.on-resume .bg-grid,
+    body.on-resume .bg-glow,
+    body.on-resume .bg-grain,
+    body.on-resume .cursor-glow,
+    body.on-resume .skip-link,
+    .rz-bar {
         display: none !important;
     }
 
-    [data-reveal] {
-        opacity: 1 !important;
-        transform: none !important;
-        transition: none !important;
-    }
-
-    main,
-    .section,
-    .page-top,
-    .shell,
-    .rz-shell {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: none !important;
-        width: auto !important;
-    }
-
-    /* Monochrome token swap, scoped to the page. */
     .rz-page {
-        --text: #14161a;
-        --muted: #35383d;
-        --faint: #6d7177;
-        --line: #b9bcc1;
-        --line-soft: #d9dbde;
-        --surface: #fff;
-        --surface-2: #fff;
-        --accent: #14161a;
-        --accent-line: #b9bcc1;
-        --accent-dim: transparent;
-        color: #14161a;
+        padding: 0 !important;
     }
 
-    .rz-doc {
+    .rz-shell {
+        max-width: none !important;
+    }
+
+    .rz-doc,
+    .rz-page[data-rz-theme] .rz-doc {
+        --rz-paper: #fff;
+        --rz-ink: #000;
+        --rz-ink-2: #1f1f1f;
+        --rz-ink-3: #4a4a4a;
+        --rz-line: #c4c4c4;
+        --rz-line-soft: #e2e2e2;
+        --rz-chip: transparent;
+        --rz-accent: #000;
+        --rz-s: .62;
+        --rz-label: 118px;
+
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        background: #fff !important;
         padding: 0 !important;
-    }
-
-    .rz-doc::before,
-    .rz-doc::after {
-        display: none;
-    }
-
-    .rz-doc a {
-        color: inherit !important;
-        text-decoration: none !important;
-    }
-
-    .rz-photo {
-        width: 78px;
-        height: 78px;
-        box-shadow: none;
-        border-color: #b9bcc1;
-    }
-
-    /* Point sizes so the printer, not the viewport, decides the scale. */
-    .rz-name {
-        font-size: 23pt;
-    }
-
-    .rz-headline {
-        font-size: 11pt;
-    }
-
-    .rz-tagline,
-    .rz-figure,
-    .rz-c {
-        font-size: 7.5pt;
-    }
-
-    .rz-figure b {
-        font-size: 11pt;
-    }
-
-    .rz-summary {
-        font-size: 9.5pt;
-        line-height: 1.5;
-        max-width: none;
-    }
-
-    .rz-h {
-        font-size: 8pt;
-    }
-
-    .rz-entry-id h3,
-    .rz-project h3,
-    .rz-edu-item h3 {
-        font-size: 10.5pt;
-    }
-
-    .rz-role-line {
-        font-size: 9pt;
-    }
-
-    .rz-p,
-    .rz-ul li,
-    .rz-ul-plain li {
-        font-size: 9pt;
+        font-size: calc(10pt * var(--rz-scale, 1));
         line-height: 1.45;
     }
 
-    .rz-when,
-    .rz-span,
-    .rz-place,
-    .rz-stack,
-    .rz-meta,
-    .rz-detail,
+    /* Print runs tighter than screen at every density, but the sheet's
+       choice still has to come through — otherwise "Resume Density" moves
+       the screen and leaves the PDF exactly where it was. */
+    .rz-page[data-rz-density="compact"] .rz-doc {
+        --rz-s: .42;
+        line-height: 1.38;
+    }
+
+    .rz-page[data-rz-density="airy"] .rz-doc {
+        --rz-s: .85;
+    }
+
+    .rz-name {
+        font-size: calc(21pt * var(--rz-scale, 1));
+    }
+
+    .rz-headline {
+        font-size: calc(10.5pt * var(--rz-scale, 1));
+    }
+
+    .rz-tagline {
+        font-size: calc(7pt * var(--rz-scale, 1));
+    }
+
+    .rz-lead,
+    .rz-p,
+    .rz-ul li {
+        font-size: calc(9.2pt * var(--rz-scale, 1));
+        line-height: 1.45;
+        max-width: none;
+    }
+
+    .rz-c {
+        font-size: calc(8.4pt * var(--rz-scale, 1));
+    }
+
+    .rz-sec-label h2 {
+        font-size: calc(7.4pt * var(--rz-scale, 1));
+    }
+
+    .rz-entry-id h3 {
+        font-size: calc(10pt * var(--rz-scale, 1));
+    }
+
+    .rz-role {
+        font-size: calc(9pt * var(--rz-scale, 1));
+    }
+
+    .rz-dates {
+        font-size: calc(7.6pt * var(--rz-scale, 1));
+    }
+
+    .rz-sub,
     .rz-tag,
-    .rz-tags-label,
-    .rz-gpa {
-        font-size: 7.5pt;
+    .rz-taglabel,
+    .rz-fig span {
+        font-size: calc(7pt * var(--rz-scale, 1));
     }
 
-    .rz-stack-row h4 {
-        font-size: 9pt;
+    .rz-fig b {
+        font-size: calc(13pt * var(--rz-scale, 1));
     }
 
-    .rz-body {
-        gap: 1.2rem;
-        padding-top: 1.1rem;
+    .rz-plain li {
+        font-size: calc(8.8pt * var(--rz-scale, 1));
     }
 
-    .rz-entries {
-        gap: .85rem;
-    }
-
-    .rz-entry+.rz-entry,
-    .rz-project+.rz-project {
-        padding-top: .85rem;
+    .rz-detail {
+        font-size: calc(8pt * var(--rz-scale, 1));
     }
 
     .rz-tag {
-        background: transparent !important;
-        border-color: #c3c6ca !important;
+        border-color: #b8b8b8;
+        padding: .1rem .34rem;
     }
 
-    .rz-ul li::before {
-        background: #14161a;
+    .rz-portrait {
+        border-color: #c4c4c4;
     }
 
-    /* Keep a job, a project, a degree or a heading whole. */
+    /* A single job, degree, project, skill row or extras column should never
+       straddle a page break — but a whole section must be allowed to, or a
+       long Experience block that can't fit in the space left over gets
+       shunted to the next page and strands half a sheet of white. */
     .rz-entry,
-    .rz-project,
-    .rz-edu-item,
-    .rz-stack-row,
-    .rz-sec-extra,
-    .rz-head {
+    .rz-skill-row,
+    .rz-extra,
+    .rz-mast {
         break-inside: avoid;
         page-break-inside: avoid;
     }
 
-    .rz-h {
+    .rz-sec {
+        break-inside: auto;
+        page-break-inside: auto;
+    }
+
+    .rz-sec-label h2,
+    .rz-entry-id h3 {
         break-after: avoid;
         page-break-after: avoid;
     }
 
     .rz-foot {
-        margin-top: 1.2rem;
-        font-size: 8pt;
-    }
-}
-
-/* A print sheet is ~186mm wide, so auto-fit would guess a column count from
-   the screen viewport instead. Pin these to two. */
-@media print {
-
-    .rz-edu,
-    .rz-extras {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 1rem 1.8rem !important;
-    }
-}
-
-/* Print rhythm. Screen spacing is generous by design; on paper the same
-   gaps cost a page, so the vertical scale is tightened here without
-   touching type size or the on-screen layout. */
-@media print {
-
-    .rz-contact {
-        margin-top: 1rem;
-        padding: .55rem 0;
+        margin-top: .8rem;
+        padding-top: .5rem;
     }
 
-    .rz-summary {
-        margin-top: .55rem;
-    }
-
-    .rz-figures {
-        margin-top: .6rem;
-        gap: .3rem 1.3rem;
-    }
-
-    .rz-body {
-        gap: .95rem;
-        padding-top: 1rem;
-    }
-
-    .rz-h {
-        margin-bottom: .6rem;
-        padding-bottom: .32rem;
-    }
-
-    .rz-entries {
-        gap: .7rem;
-    }
-
-    .rz-entry+.rz-entry,
-    .rz-project+.rz-project {
-        padding-top: .7rem;
-    }
-
-    .rz-p {
-        margin-top: .34rem;
-    }
-
-    .rz-ul {
-        margin-top: .34rem;
-        gap: .2rem;
-    }
-
-    .rz-tags-inline {
-        margin-top: .42rem;
-    }
-
-    .rz-stack-grid {
-        gap: .5rem;
-    }
-
-    .rz-projects {
-        gap: .8rem;
-    }
-
-    .rz-foot {
-        margin-top: .9rem;
-        padding-top: .6rem;
-    }
-}
-
-@media print {
-
-    .rz-body {
-        gap: .78rem;
-    }
-
-    .rz-h {
-        margin-bottom: .5rem;
-    }
-
-    .rz-edu,
-    .rz-extras {
-        gap: .8rem 1.8rem !important;
-    }
-
-    .rz-foot {
-        margin-top: .6rem;
-        padding-top: .45rem;
+    a[href]::after {
+        content: "" !important;
     }
 }
