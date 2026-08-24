@@ -852,13 +852,15 @@ h4 {
     align-items: center;
     gap: .4rem;
     padding: .34rem .72rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--accent-line);
     border-radius: var(--r-pill);
-    background: var(--surface-2);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     font-family: var(--ff-mono);
     font-size: .68rem;
     letter-spacing: .04em;
-    color: var(--muted);
+    color: var(--accent);
     white-space: nowrap;
 }
 
