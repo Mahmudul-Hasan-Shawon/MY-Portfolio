@@ -790,7 +790,7 @@ h4 {
     place-items: center;
     background: transparent;
     border: 1px solid var(--line);
-    border-radius: var(--r-sm);
+    border-radius: var(--r-lg);
     cursor: pointer;
     transition: border-color .25s, color .25s, background .25s;
 }
