@@ -1808,7 +1808,7 @@ h4 {
 
 .video-frame {
     position: relative;
-    border-radius: var(--r-lg);
+    border-radius: 25px;
     overflow: hidden;
     border: 1px solid var(--line);
     background: var(--surface);
