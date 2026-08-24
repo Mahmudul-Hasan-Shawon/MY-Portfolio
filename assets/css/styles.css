@@ -4853,26 +4853,3 @@ a.rz-c:hover {
         padding: .85rem .6rem;
     }
 }
-
-
-
-
-
-
-
-/* RESUME */
-.rz-mast-inner {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.rz-portrait {
-    flex-shrink: 0;
-    width: 80px;
-    height: 80px;
-}
-
-.rz-mast-text {
-    flex: 1;
-}
