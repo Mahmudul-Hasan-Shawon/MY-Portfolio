@@ -48,17 +48,17 @@ var BASE = (function () {
 function checkFonts() {
     // Use Font Loading API
     if (document.fonts) {
-        document.fonts.ready.then(function() {
+        document.fonts.ready.then(function () {
             document.body.classList.add('fonts-loaded');
         });
     }
 }
 
 // Alternative: check after page load
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     // Force a re-render
     document.body.style.opacity = '0.99';
-    setTimeout(function() {
+    setTimeout(function () {
         document.body.style.opacity = '1';
     }, 10);
 });
@@ -1225,13 +1225,13 @@ function socialHTML(featuredOnly) {
 function renderIcon(iconValue, altText) {
     var v = String(iconValue || "").trim();
     if (!v) return '<i class="fa-solid fa-link"></i>';
-    
+
     // Check if it's an image file path (ends with .svg, .png, .ico, .jpg, .jpeg, .webp, .gif)
     if (/\.(svg|png|ico|jpg|jpeg|webp|gif)(\?.*)?$/i.test(v)) {
         var src = resolveAsset(v);
         return '<img src="' + esc(src) + '" alt="' + esc(altText || 'icon') + '" class="social-icon">';
     }
-    
+
     // Otherwise treat as Font Awesome class
     return '<i class="' + esc(icon(v, "fa-solid fa-link")) + '"></i>';
 }
@@ -1647,26 +1647,46 @@ function pageMissing(slug) {
    comfortable measure. What prints is what the screen shows.
    ========================================================================== */
 
-/* Every block the page can draw, in the order it takes when the sheet says
+
+/* ── BLOCK ORDER ──────────────────────────────────────────────────────
+
+   Every block the page can draw, in the order it takes when the sheet says
    nothing about ordering. Blocks invented by the 🗓 Experience "Type" column
-   are spliced in after Experience — see rzDefaultOrder(). */
+   are spliced in after Experience — see rzDefaultOrder().
+
+   ──────────────────────────────────────────────────────────────────── */
+
 var RZ_ORDER = [
-    "header", "contact", "summary", "stats",
-    "experience", "projects", "skills", "education", "extras"
+    "header",
+    "contact",
+    "summary",
+    "stats",
+    "experience",
+    "projects",
+    "skills",
+    "education",
+    "extras"
 ];
 
-/* ── Sheet value readers ──────────────────────────────────────────────
-   All four sit on top of rcfg(), so each one honours 📄 Resume → ⚙ Config
-   → hard default in that order. */
+
+/* ── SHEET VALUE READERS ─────────────────────────────────────────────
+
+   All four sit on top of rcfg(), so each one honours:
+      📄 Resume → ⚙ Config → hard default
+   in that order.
+
+   ──────────────────────────────────────────────────────────────────── */
 
 /* A count from the sheet. Blank falls back to the default; 0 is honoured,
    so "Projects Count: 0" is a legitimate way to drop the project list. */
 function rnum(key, dflt) {
     var raw = String(rcfg(key, "")).trim();
     if (!raw) return dflt;
+
     var n = parseInt(raw.replace(/[^0-9]/g, ""), 10);
     return isNaN(n) ? dflt : n;
 }
+
 
 /* A lower-cased keyword — "Paper Size: A4" → "a4". */
 function ropt(key, dflt) {
@@ -1674,25 +1694,40 @@ function ropt(key, dflt) {
     return v || (dflt || "");
 }
 
+
 /* A comma- or newline-separated cell, lower-cased for matching. */
 function rlist(key) {
-    return listOf(rcfg(key, "")).map(function (s) { return s.toLowerCase(); });
+    return listOf(rcfg(key, "")).map(function (s) {
+        return s.toLowerCase();
+    });
 }
+
 
 /* Trim a list to a sheet count. Blank cell → the whole list untouched. */
 function rcap(arr, key) {
     if (!key) return arr;
+
     var raw = String(rcfg(key, "")).trim();
     if (!raw) return arr;
+
     var n = parseInt(raw.replace(/[^0-9]/g, ""), 10);
     return isNaN(n) ? arr : arr.slice(0, n);
 }
 
-/* ── The page ─────────────────────────────────────────────────────── */
+
+/* ── PAGE RENDERER ───────────────────────────────────────────────────
+
+   The main entry point. Builds the registry, sequences the blocks,
+   wraps everything in the article shell.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function pageResume() {
     var reg = rzRegistry();
-    var body = rzSequence(reg).map(function (k) { return reg[k](); })
-        .filter(Boolean).join("");
+    var body = rzSequence(reg)
+        .map(function (k) { return reg[k](); })
+        .filter(Boolean)
+        .join("");
 
     return '<article class="rz-page"' +
         ' data-rz-theme="' + esc(ropt("resumeTheme", "paper")) + '"' +
@@ -1701,13 +1736,22 @@ function pageResume() {
         rzStyle() +
         '<div class="rz-shell">' +
         rzBar() +
-        '<div class="rz-doc" id="resume-sheet">' + body + rzFoot() + '</div>' +
+        '<div class="rz-doc" id="resume-sheet">' +
+        body +
+        rzFoot() +
+        '</div>' +
         '</div></article>';
 }
 
-/* Sheet-driven theming. Injected as a <style> rather than inline attributes
+
+/* ── STYLESHEET GENERATOR ────────────────────────────────────────────
+
+   Sheet-driven theming. Injected as a <style> rather than inline attributes
    so one cell can restyle every block at once, and so the @page rule — which
-   has nowhere else to live — can be written from the sheet too. */
+   has nowhere else to live — can be written from the sheet too.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzStyle() {
     var vars = {
         "--rz-accent": rcfg("resumeAccent", ""),
@@ -1717,7 +1761,9 @@ function rzStyle() {
     };
 
     var css = ".rz-doc{";
-    Object.keys(vars).forEach(function (k) { if (vars[k]) css += k + ":" + vars[k] + ";"; });
+    Object.keys(vars).forEach(function (k) {
+        if (vars[k]) css += k + ":" + vars[k] + ";";
+    });
     css += "}";
 
     var size = ropt("paperSize", "a4") === "letter" ? "letter" : "A4";
@@ -1731,21 +1777,28 @@ function rzStyle() {
     return '<style id="rz-vars">' + css + '</style>';
 }
 
+
 /* A CSS length the sheet can write loosely — "880", "880px", "60ch", "13mm
    14mm" all work. Anything with characters that don't belong in a length is
    dropped in favour of the default rather than emitted into the stylesheet. */
 function rzLen(v, dflt) {
     var s = String(v || "").trim();
     if (!s) return dflt;
+
     if (/^[0-9.]+$/.test(s)) return s + "px";
     return /^[0-9a-z.%\s]+$/i.test(s) ? s : dflt;
 }
 
-/* ── Block registry and ordering ──────────────────────────────────────
+
+/* ── BLOCK REGISTRY ──────────────────────────────────────────────────
+
    The registry is rebuilt on every render because the 🗓 Experience sheet
    can invent blocks: any Type that isn't work-like or education-like
    becomes a block of its own, keyed by its own slug, so "Volunteering" in
-   the sheet can be named in Section Order without touching this file. */
+   the sheet can be named in Section Order without touching this file.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzRegistry() {
     var reg = {
         header: rzHeader,
@@ -1767,22 +1820,34 @@ function rzRegistry() {
     return reg;
 }
 
+
 function rzDefaultOrder(reg) {
-    var custom = Object.keys(reg).filter(function (k) { return RZ_ORDER.indexOf(k) === -1; });
+    var custom = Object.keys(reg).filter(function (k) {
+        return RZ_ORDER.indexOf(k) === -1;
+    });
+
     var out = [];
     RZ_ORDER.forEach(function (k) {
         out.push(k);
         if (k === "experience") out = out.concat(custom);
     });
+
     return out;
 }
 
+
 function rzSequence(reg) {
-    var named = listOf(rcfg("sectionOrder", "")).map(slugify).filter(Boolean);
+    var named = listOf(rcfg("sectionOrder", ""))
+        .map(slugify)
+        .filter(Boolean);
+
     var out = [], seen = {};
 
     named.forEach(function (k) {
-        if (reg[k] && !seen[k]) { seen[k] = 1; out.push(k); }
+        if (reg[k] && !seen[k]) {
+            seen[k] = 1;
+            out.push(k);
+        }
     });
 
     // Naming a few blocks normally means "these first, the rest after".
@@ -1790,25 +1855,40 @@ function rzSequence(reg) {
     if (named.length && ron("strictSectionOrder", "no")) return out;
 
     rzDefaultOrder(reg).forEach(function (k) {
-        if (reg[k] && !seen[k]) { seen[k] = 1; out.push(k); }
+        if (reg[k] && !seen[k]) {
+            seen[k] = 1;
+            out.push(k);
+        }
     });
+
     return out;
 }
 
-/* ── Section shell ────────────────────────────────────────────────────
+
+/* ── SECTION SHELL ───────────────────────────────────────────────────
+
    Heading in the left rail, content in the reading column. Dropped whole
    when its body came back empty, so a switched-off sheet never leaves an
-   orphan heading behind. */
+   orphan heading behind.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzSec(key, title, body, cls) {
     if (!body) return "";
+
     return '<section class="rz-block rz-sec' + (cls ? ' ' + cls : '') + '" id="rz-' + esc(key) + '">' +
         (title ? '<div class="rz-sec-label"><h2>' + esc(title) + '</h2></div>' : '<div class="rz-sec-label"></div>') +
         '<div class="rz-sec-body">' + body + '</div>' +
         '</section>';
 }
 
-/* ── Control bar ──────────────────────────────────────────────────────
-   Screen only — the print stylesheet drops it. Every button is optional. */
+
+/* ── CONTROL BAR ─────────────────────────────────────────────────────
+
+   Screen only — the print stylesheet drops it. Every button is optional.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzBar() {
     if (!ron("showControlBar", "yes")) return "";
 
@@ -1817,35 +1897,56 @@ function rzBar() {
 
     if (ron("showPdfButton", "yes") && pdf) {
         acts += '<a class="rz-btn" href="' + esc(pdf) + '" target="_blank" rel="noopener">' +
-            '<i class="fa-solid fa-file-arrow-down"></i>' + esc(rcfg("pdfButtonLabel", "PDF")) + '</a>';
+            '<i class="fa-solid fa-file-arrow-down"></i>' +
+            esc(rcfg("pdfButtonLabel", "PDF")) +
+            '</a>';
     }
+
     if (ron("showPrintButton", "yes")) {
         acts += '<button class="rz-btn" type="button" data-resume-print>' +
-            '<i class="fa-solid fa-print"></i>' + esc(rcfg("printButtonLabel", "Print / Save as PDF")) + '</button>';
+            '<i class="fa-solid fa-print"></i>' +
+            esc(rcfg("printButtonLabel", "Print / Save as PDF")) +
+            '</button>';
     }
+
     if (ron("showBackButton", "yes")) {
         acts += '<a class="rz-btn rz-btn-solid" href="' + esc(urlHome()) + '">' +
-            '<i class="fa-solid fa-arrow-left"></i>' + esc(rcfg("backButtonLabel", "Back to site")) + '</a>';
+            '<i class="fa-solid fa-arrow-left"></i>' +
+            esc(rcfg("backButtonLabel", "Back to site")) +
+            '</a>';
     }
 
     var badge = ron("showUnlistedBadge", "yes")
         ? '<span class="rz-flag"><i class="fa-solid fa-lock"></i>' +
-        esc(rcfg("unlistedBadgeText", "unlisted · not indexed")) + '</span>'
+          esc(rcfg("unlistedBadgeText", "unlisted · not indexed")) +
+          '</span>'
         : '';
 
     if (!badge && !acts) return "";
-    return '<div class="rz-bar">' + badge + '<div class="rz-bar-acts">' + acts + '</div></div>';
+
+    return '<div class="rz-bar">' +
+        badge +
+        '<div class="rz-bar-acts">' + acts + '</div>' +
+        '</div>';
 }
 
-/* ── Nameplate ────────────────────────────────────────────────────── */
+
+/* ── NAMEPLATE ───────────────────────────────────────────────────────
+
+   The header block with name, headline, tagline, and optional photo.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzHeader() {
     if (!ron("showHeader", "yes")) return "";
 
     var name = rcfg("fullName", rcfg("aboutName", cfg("brandName", "Résumé")));
     var headline = ron("showHeadline", "yes")
-        ? rcfg("headline", rcfg("aboutRole", cfg("role", ""))) : "";
+        ? rcfg("headline", rcfg("aboutRole", cfg("role", "")))
+        : "";
     var tagline = ron("showTagline", "yes")
-        ? rcfg("tagline", [cfg("role"), cfg("location")].filter(Boolean).join(" · ")) : "";
+        ? rcfg("tagline", [cfg("role"), cfg("location")].filter(Boolean).join(" · "))
+        : "";
 
     var src = ron("showPhoto", "yes") ? rcfg("photoUrl", cfg("aboutImageUrl", "")) : "";
     var portrait = "";
@@ -1872,10 +1973,15 @@ function rzHeader() {
         '</div></header>';
 }
 
-/* ── Contact rule ─────────────────────────────────────────────────────
+
+/* ── CONTACT BAR ─────────────────────────────────────────────────────
+
    Each strand is individually switchable and individually overridable, and
    "Contact Order" decides the sequence. Social rows come from 🔗 Social
-   Links and can be filtered to a named subset. */
+   Links and can be filtered to a named subset.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzContactBar() {
     if (!ron("showContact", "yes")) return "";
 
@@ -1887,16 +1993,23 @@ function rzContactBar() {
         items.map(function (it) {
             var inner = (icons ? '<i class="' + esc(it[0]) + '" aria-hidden="true"></i>' : '') +
                 '<span>' + esc(it[1]) + '</span>';
+
             if (!it[2]) return '<span class="rz-c">' + inner + '</span>';
+
             return '<a class="rz-c" href="' + esc(it[2]) + '"' +
                 (/^https?:/i.test(it[2]) ? ' target="_blank" rel="noopener"' : '') +
-                (it[3] ? ' title="' + esc(it[3]) + '"' : '') + '>' + inner + '</a>';
-        }).join("") + '</div>';
+                (it[3] ? ' title="' + esc(it[3]) + '"' : '') + '>' +
+                inner +
+                '</a>';
+        }).join("") +
+        '</div>';
 
     var title = rcfg("contactTitle", "");
-    return title ? rzSec("contact", title, body)
+    return title
+        ? rzSec("contact", title, body)
         : '<div class="rz-block rz-contactbar">' + body + '</div>';
 }
+
 
 function rzContactItems() {
     var full = ron("contactFullUrls", "no");
@@ -1905,23 +2018,31 @@ function rzContactItems() {
         location: function () {
             var v = rcfg("location", cfg("location", ""));
             return (ron("showLocation", "yes") && v)
-                ? [["fa-solid fa-location-dot", v, "", ""]] : [];
+                ? [["fa-solid fa-location-dot", v, "", ""]]
+                : [];
         },
+
         email: function () {
             var v = rcfg("email", cfg("email", ""));
             return (ron("showEmail", "yes") && v)
-                ? [["fa-solid fa-envelope", v, "mailto:" + v, ""]] : [];
+                ? [["fa-solid fa-envelope", v, "mailto:" + v, ""]]
+                : [];
         },
+
         phone: function () {
             var v = rcfg("phone", cfg("whatsappNumber", ""));
             return (ron("showPhone", "yes") && v)
-                ? [["fa-solid fa-phone", v, "tel:" + String(v).replace(/[^\d+]/g, ""), ""]] : [];
+                ? [["fa-solid fa-phone", v, "tel:" + String(v).replace(/[^\d+]/g, ""), ""]]
+                : [];
         },
+
         website: function () {
             var v = rcfg("website", cfg("siteUrl", ""));
             return (ron("showWebsite", "yes") && v)
-                ? [["fa-solid fa-globe", full ? v : rzHost(v), v, ""]] : [];
+                ? [["fa-solid fa-globe", full ? v : rzHost(v), v, ""]]
+                : [];
         },
+
         socials: function () {
             if (!ron("showSocials", "yes")) return [];
 
@@ -1937,7 +2058,8 @@ function rzContactItems() {
 
             var byName = ron("socialLabels", "no");
             return rows.map(function (s) {
-                var text = byName ? (s.platform || rzHost(s.url))
+                var text = byName
+                    ? (s.platform || rzHost(s.url))
                     : (full ? s.url : rzHost(s.url));
                 return [icon(s.icon, "fa-solid fa-link"), text, s.url, s.platform];
             });
@@ -1948,13 +2070,21 @@ function rzContactItems() {
     if (!order.length) order = ["location", "email", "phone", "website", "socials"];
 
     var out = [];
-    order.forEach(function (k) { if (build[k]) out = out.concat(build[k]()); });
+    order.forEach(function (k) {
+        if (build[k]) out = out.concat(build[k]());
+    });
+
     return out;
 }
 
-/* ── Summary ──────────────────────────────────────────────────────────
+
+/* ── SUMMARY ─────────────────────────────────────────────────────────
+
    A heading is optional: with "Summary Title" filled the paragraph becomes
-   a labelled section like any other; left blank it reads as a lead. */
+   a labelled section like any other; left blank it reads as a lead.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzSummaryBlock() {
     if (!ron("showSummary", "yes")) return "";
 
@@ -1963,36 +2093,57 @@ function rzSummaryBlock() {
 
     var body = '<p class="rz-lead">' + markup(txt) + '</p>';
     var title = rcfg("summaryTitle", "");
-    return title ? rzSec("summary", title, body)
+
+    return title
+        ? rzSec("summary", title, body)
         : '<div class="rz-block rz-leadwrap">' + body + '</div>';
 }
 
-/* ── Figures ──────────────────────────────────────────────────────────
+
+/* ── STATS FIGURES ──────────────────────────────────────────────────
+
    📊 Stats, printed as static figures — the animated counters used on the
-   home page would land on a half-counted number inside a PDF. */
+   home page would land on a half-counted number inside a PDF.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzStatsBlock() {
     if (!ron("showStats", "yes")) return "";
 
     var list = STATS.filter(function (s) { return on2(s.show) && s.value; });
-    list = String(rcfg("statsCount", "")).trim() ? rcap(list, "statsCount") : list.slice(0, 4);
+    list = String(rcfg("statsCount", "")).trim()
+        ? rcap(list, "statsCount")
+        : list.slice(0, 4);
+
     if (!list.length) return "";
 
     var labels = ron("showStatLabels", "yes");
-    var body = '<div class="rz-figs">' + list.map(function (s) {
-        return '<span class="rz-fig"><b>' + esc(s.value) + '</b>' +
-            (labels && s.label ? '<span>' + esc(s.label) + '</span>' : '') + '</span>';
-    }).join("") + '</div>';
+    var body = '<div class="rz-figs">' +
+        list.map(function (s) {
+            return '<span class="rz-fig">' +
+                '<b>' + esc(s.value) + '</b>' +
+                (labels && s.label ? '<span>' + esc(s.label) + '</span>' : '') +
+                '</span>';
+        }).join("") +
+        '</div>';
 
     var title = rcfg("statsTitle", "");
-    return title ? rzSec("stats", title, body)
+    return title
+        ? rzSec("stats", title, body)
         : '<div class="rz-block rz-figrow">' + body + '</div>';
 }
 
-/* ── Dates ────────────────────────────────────────────────────────────
+
+/* ── DATE UTILITIES ──────────────────────────────────────────────────
+
    The sheet writes dates however it likes — "2019", "Mar 2023", "Present".
    Both forms are parsed so a tenure can sit beside the range; anything
-   unparseable shows no tenure rather than a wrong one. */
+   unparseable shows no tenure rather than a wrong one.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 var RZ_MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
 
 function rzDate(v) {
     var s = String(v || "").trim();
@@ -2006,14 +2157,19 @@ function rzDate(v) {
     var md = s.match(/^([A-Za-z]{3,})\.?\s+(\d{4})$/);
     if (md) {
         var mi = RZ_MONTHS.indexOf(md[1].slice(0, 3).toLowerCase());
-        if (mi > -1) return { y: parseInt(md[2], 10), m: mi, coarse: false };
+        if (mi > -1) {
+            return { y: parseInt(md[2], 10), m: mi, coarse: false };
+        }
     }
 
     var yd = s.match(/^(\d{4})$/);
-    if (yd) return { y: parseInt(yd[1], 10), m: 0, coarse: true };
+    if (yd) {
+        return { y: parseInt(yd[1], 10), m: 0, coarse: true };
+    }
 
     return null;
 }
+
 
 function rzSpan(start, end) {
     var a = rzDate(start), b = rzDate(end);
@@ -2029,38 +2185,63 @@ function rzSpan(start, end) {
     var months = (b.y - a.y) * 12 + (b.m - a.m) + 1;
     if (months < 1) return "";
 
-    var y = Math.floor(months / 12), m = months % 12, out = [];
+    var y = Math.floor(months / 12);
+    var m = months % 12;
+    var out = [];
+
     if (y) out.push(y + " yr" + (y > 1 ? "s" : ""));
     if (m) out.push(m + " mo" + (m > 1 ? "s" : ""));
+
     return out.join(" ");
 }
 
-/* ── Work history ─────────────────────────────────────────────────────
+
+/* ── WORK HISTORY GROUPING ──────────────────────────────────────────
+
    🗓 Experience split on its Type column: work-like rows become the
    Experience block, education-like rows are peeled off for the Education
-   block, and anything else keeps its own label and gets its own block. */
+   block, and anything else keeps its own label and gets its own block.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzGroups() {
     var order = [], byKey = {};
 
     EXP.filter(function (e) { return on2(e.show); }).forEach(function (e) {
         var raw = String(e.type || "").trim();
         var k = raw.toLowerCase();
-        var key = (!raw || /^(work|job|employment|experience|career|freelance)/.test(k)) ? "__work"
-            : /^(edu|study|academic|school|degree)/.test(k) ? "__edu"
+
+        var key = (!raw || /^(work|job|employment|experience|career|freelance)/.test(k))
+            ? "__work"
+            : /^(edu|study|academic|school|degree)/.test(k)
+                ? "__edu"
                 : (slugify(raw) || "__work");
 
-        if (!byKey[key]) { byKey[key] = { key: key, label: raw, items: [] }; order.push(key); }
+        if (!byKey[key]) {
+            byKey[key] = { key: key, label: raw, items: [] };
+            order.push(key);
+        }
         byKey[key].items.push(e);
     });
 
     return order.map(function (k) { return byKey[k]; });
 }
 
+
 function rzFindGroup(key) {
     var found = null;
-    rzGroups().forEach(function (g) { if (g.key === key) found = g; });
+    rzGroups().forEach(function (g) {
+        if (g.key === key) found = g;
+    });
     return found;
 }
+
+
+/* ── EXPERIENCE BLOCK ──────────────────────────────────────────────
+
+   Renders the main work experience section.
+
+   ──────────────────────────────────────────────────────────────────── */
 
 function rzExperienceBlock() {
     if (!ron("showExperience", "yes")) return "";
@@ -2068,15 +2249,23 @@ function rzExperienceBlock() {
     return g ? rzHistoryBlock(g) : "";
 }
 
+
 function rzHistoryBlock(g) {
     var work = g.key === "__work";
-    var title = work ? rcfg("experienceTitle", "Experience") : (g.label || "Experience");
+    var title = work
+        ? rcfg("experienceTitle", "Experience")
+        : (g.label || "Experience");
+
     var items = rcap(g.items, work ? "experienceCount" : "");
     if (!items.length) return "";
 
-    return rzSec(work ? "experience" : g.key, title,
-        '<div class="rz-entries">' + items.map(rzJob).join("") + '</div>');
+    return rzSec(
+        work ? "experience" : g.key,
+        title,
+        '<div class="rz-entries">' + items.map(rzJob).join("") + '</div>'
+    );
 }
+
 
 function rzJob(e) {
     var showRole = ron("showExperienceRole", "yes");
@@ -2093,8 +2282,10 @@ function rzJob(e) {
     var role = (e.org && showRole) ? e.title : "";
 
     var when = showDates ? [e.start, e.end].filter(Boolean).join(" – ") : "";
-    var sub = [showTenure ? rzSpan(e.start, e.end) : "", showPlace ? (e.location || "") : ""]
-        .filter(Boolean).join(" · ");
+    var sub = [
+        showTenure ? rzSpan(e.start, e.end) : "",
+        showPlace ? (e.location || "") : ""
+    ].filter(Boolean).join(" · ");
 
     var tags = showTags ? rcap(listOf(e.tags), "experienceTagsCount") : [];
 
@@ -2102,7 +2293,8 @@ function rzJob(e) {
     // little "Stack" caption needs a switch of its own rather than an
     // empty label cell.
     var tagLabel = ron("showExperienceTagsLabel", "yes")
-        ? rcfg("experienceTagsLabel", "Stack") : "";
+        ? rcfg("experienceTagsLabel", "Stack")
+        : "";
 
     return '<article class="rz-entry">' +
         '<div class="rz-entry-top">' +
@@ -2124,6 +2316,7 @@ function rzJob(e) {
         '</article>';
 }
 
+
 /* A description holding several lines reads as bullets; a single line stays
    a paragraph rather than a lone stranded bullet. "Experience Bullets" caps
    how many survive, which is the quickest lever for a one-page résumé. */
@@ -2138,12 +2331,21 @@ function rzBullets(text, limit) {
     if (ls.length === 1 && !/^[-•·*]\s/.test(ls[0])) {
         return '<p class="rz-p">' + esc(ls[0]) + '</p>';
     }
-    return '<ul class="rz-ul">' + ls.map(function (l) {
-        return '<li>' + esc(l.replace(/^[-•·*]\s*/, "")) + '</li>';
-    }).join("") + '</ul>';
+
+    return '<ul class="rz-ul">' +
+        ls.map(function (l) {
+            return '<li>' + esc(l.replace(/^[-•·*]\s*/, "")) + '</li>';
+        }).join("") +
+        '</ul>';
 }
 
-/* ── Selected projects ────────────────────────────────────────────── */
+
+/* ── PROJECTS BLOCK ──────────────────────────────────────────────────
+
+   Selected projects from the 🚀 Projects sheet.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzProjectsBlock() {
     if (!ron("showProjects", "yes")) return "";
 
@@ -2151,6 +2353,7 @@ function rzProjectsBlock() {
     if (!all.length) return "";
 
     var list;
+
     if (ron("projectsFeaturedOnly", "no")) {
         list = all.filter(isFeatured);
     } else if (ron("projectsFeaturedFirst", "yes")) {
@@ -2160,7 +2363,10 @@ function rzProjectsBlock() {
         list = all;
     }
 
-    list = String(rcfg("projectsCount", "")).trim() ? rcap(list, "projectsCount") : list.slice(0, 4);
+    list = String(rcfg("projectsCount", "")).trim()
+        ? rcap(list, "projectsCount")
+        : list.slice(0, 4);
+
     if (!list.length) return "";
 
     var showMeta = ron("showProjectMeta", "yes");
@@ -2169,16 +2375,20 @@ function rzProjectsBlock() {
     var showLink = ron("showProjectLink", "no");
 
     return rzSec("projects", rcfg("projectsTitle", "Selected Projects"),
-        '<div class="rz-entries">' + list.map(function (p) {
+        '<div class="rz-entries">' +
+        list.map(function (p) {
             var tags = showTags ? rcap(listOf(p.tags), "projectTagsCount") : [];
-            if (showTags && !String(rcfg("projectTagsCount", "")).trim()) tags = tags.slice(0, 6);
+            if (showTags && !String(rcfg("projectTagsCount", "")).trim()) {
+                tags = tags.slice(0, 6);
+            }
 
             var meta = showMeta ? [p.client, p.year].filter(Boolean).join(" · ") : "";
             var link = showLink ? (p.liveUrl || p.repoUrl || "") : "";
 
             return '<article class="rz-entry rz-project">' +
                 '<div class="rz-entry-top">' +
-                '<div class="rz-entry-id"><h3>' + esc(p.title) + '</h3>' +
+                '<div class="rz-entry-id">' +
+                '<h3>' + esc(p.title) + '</h3>' +
                 (tags.length ? '<p class="rz-stackline">' + esc(tags.join(" · ")) + '</p>' : '') +
                 '</div>' +
                 (meta ? '<div class="rz-entry-when"><span class="rz-dates">' + esc(meta) + '</span></div>' : '') +
@@ -2187,13 +2397,20 @@ function rzProjectsBlock() {
                 (link ? '<p class="rz-link"><a href="' + esc(link) + '" target="_blank" rel="noopener">' +
                     esc(rzHost(link)) + '</a></p>' : '') +
                 '</article>';
-        }).join("") + '</div>');
+        }).join("") +
+        '</div>'
+    );
 }
 
-/* ── Technical expertise ──────────────────────────────────────────────
+
+/* ── SKILLS BLOCK ────────────────────────────────────────────────────
+
    🧠 Skills categories become labelled rows; 🧰 Tools joins them as a final
    row so the whole stack reads in one block. "Skills Style" swaps the chips
-   for a plain comma list, which is denser and prints smaller. */
+   for a plain comma list, which is denser and prints smaller.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzSkillsBlock() {
     if (!ron("showSkills", "yes")) return "";
 
@@ -2202,9 +2419,14 @@ function rzSkillsBlock() {
     rows = rcap(rows, "skillsCount");
 
     if (ron("showTools", "yes")) {
-        var tools = rcap(TOOLS.filter(function (t) { return on2(t.show) && t.name; })
-            .map(function (t) { return t.name; }), "toolsCount");
-        if (tools.length) rows.push({ label: rcfg("toolsLabel", "Tools & Platforms"), items: tools });
+        var tools = rcap(
+            TOOLS.filter(function (t) { return on2(t.show) && t.name; })
+                .map(function (t) { return t.name; }),
+            "toolsCount"
+        );
+        if (tools.length) {
+            rows.push({ label: rcfg("toolsLabel", "Tools & Platforms"), items: tools });
+        }
     }
 
     rows = rows.filter(function (r) { return r.items.length; });
@@ -2214,21 +2436,33 @@ function rzSkillsBlock() {
     var showLabels = ron("showSkillLabels", "yes");
 
     return rzSec("skills", rcfg("skillsTitle", "Technical Expertise"),
-        '<div class="rz-skills' + (plain ? ' rz-skills-text' : '') + '">' + rows.map(function (r) {
+        '<div class="rz-skills' + (plain ? ' rz-skills-text' : '') + '">' +
+        rows.map(function (r) {
             var items = plain
                 ? '<p class="rz-skill-list">' + esc(r.items.join(" · ")) + '</p>'
-                : '<div class="rz-tagrow">' + r.items.map(function (i) {
-                    return '<span class="rz-tag">' + esc(i) + '</span>';
-                }).join("") + '</div>';
+                : '<div class="rz-tagrow">' +
+                  r.items.map(function (i) {
+                      return '<span class="rz-tag">' + esc(i) + '</span>';
+                  }).join("") +
+                  '</div>';
 
             return '<div class="rz-skill-row">' +
-                (showLabels ? '<h4>' + esc(r.label) + '</h4>' : '') + items + '</div>';
-        }).join("") + '</div>');
+                (showLabels ? '<h4>' + esc(r.label) + '</h4>' : '') +
+                items +
+                '</div>';
+        }).join("") +
+        '</div>'
+    );
 }
 
-/* ── Education ────────────────────────────────────────────────────────
+
+/* ── EDUCATION BLOCK ─────────────────────────────────────────────────
+
    Résumés normally list the degree, not an essay about it, so descriptions
-   are off by default — "Education Detail: Yes" brings them back. */
+   are off by default — "Education Detail: Yes" brings them back.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzEducationBlock() {
     if (!ron("showEducation", "yes")) return "";
 
@@ -2245,27 +2479,38 @@ function rzEducationBlock() {
     var showMeta = ron("showEducationMeta", "yes");
 
     return rzSec("education", rcfg("educationTitle", "Education"),
-        '<div class="rz-entries rz-edu">' + items.map(function (e) {
+        '<div class="rz-entries rz-edu">' +
+        items.map(function (e) {
             var when = showDates ? [e.start, e.end].filter(Boolean).join(" – ") : "";
-            var line = [showOrg ? e.org : "", showPlace ? e.location : ""].filter(Boolean).join(" · ");
+            var line = [showOrg ? e.org : "", showPlace ? e.location : ""]
+                .filter(Boolean).join(" · ");
 
             return '<article class="rz-entry">' +
                 '<div class="rz-entry-top">' +
-                '<div class="rz-entry-id"><h3>' + esc(e.title) +
-                (showMeta && e.meta ? '<span class="rz-badge">' + esc(e.meta) + '</span>' : '') + '</h3>' +
+                '<div class="rz-entry-id">' +
+                '<h3>' + esc(e.title) +
+                (showMeta && e.meta ? '<span class="rz-badge">' + esc(e.meta) + '</span>' : '') +
+                '</h3>' +
                 (line ? '<p class="rz-role">' + esc(line) + '</p>' : '') +
                 '</div>' +
                 (when ? '<div class="rz-entry-when"><span class="rz-dates">' + esc(when) + '</span></div>' : '') +
                 '</div>' +
                 (detail && e.description ? '<p class="rz-p">' + esc(lines(e.description).join(" ")) + '</p>' : '') +
                 '</article>';
-        }).join("") + '</div>');
+        }).join("") +
+        '</div>'
+    );
 }
 
-/* ── 🏅 Resume Extras ─────────────────────────────────────────────────
-   Whatever the sheet groups together becomes a block. "Extras Style" picks
-   between one section holding every group as a column ("grouped", the
-   default) and a separate labelled section per group ("sections"). */
+
+/* ── EXTRAS BLOCK ────────────────────────────────────────────────────
+
+   🏅 Resume Extras: whatever the sheet groups together becomes a block.
+   "Extras Style" picks between one section holding every group as a column
+   ("grouped", the default) and a separate labelled section per group ("sections").
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzExtrasBlock() {
     if (!ron("showExtras", "yes")) return "";
 
@@ -2275,7 +2520,11 @@ function rzExtrasBlock() {
     RXTRA.filter(function (r) { return on2(r.show) && r.item; }).forEach(function (r) {
         var g = String(r.group || "Highlights").trim();
         if (only.length && only.indexOf(g.toLowerCase()) === -1) return;
-        if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+
+        if (!byGroup[g]) {
+            byGroup[g] = [];
+            order.push(g);
+        }
         byGroup[g].push(r);
     });
 
@@ -2285,14 +2534,17 @@ function rzExtrasBlock() {
     var showDetail = ron("showExtraDetails", "yes");
 
     function list(g) {
-        return '<ul class="rz-ul rz-plain">' + rcap(byGroup[g], "extrasItemsCount").map(function (r) {
-            var label = r.link
-                ? '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">' + esc(r.item) + '</a>'
-                : esc(r.item);
-            return '<li>' + label +
-                (showDetail && r.detail ? '<span class="rz-detail">' + esc(r.detail) + '</span>' : '') +
-                '</li>';
-        }).join("") + '</ul>';
+        return '<ul class="rz-ul rz-plain">' +
+            rcap(byGroup[g], "extrasItemsCount").map(function (r) {
+                var label = r.link
+                    ? '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">' + esc(r.item) + '</a>'
+                    : esc(r.item);
+
+                return '<li>' + label +
+                    (showDetail && r.detail ? '<span class="rz-detail">' + esc(r.detail) + '</span>' : '') +
+                    '</li>';
+            }).join("") +
+            '</ul>';
     }
 
     if (ropt("extrasStyle", "grouped") === "sections") {
@@ -2305,12 +2557,19 @@ function rzExtrasBlock() {
     var body = '<div class="rz-extras" style="--rz-cols:' + (cols > 0 ? cols : 1) + '">' +
         order.map(function (g) {
             return '<div class="rz-extra"><h4>' + esc(g) + '</h4>' + list(g) + '</div>';
-        }).join("") + '</div>';
+        }).join("") +
+        '</div>';
 
     return rzSec("extras", rcfg("extrasTitle", "Additional"), body);
 }
 
-/* ── Footer ───────────────────────────────────────────────────────── */
+
+/* ── FOOTER ──────────────────────────────────────────────────────────
+
+   The bottom of the résumé with availability, contact link, and updated date.
+
+   ──────────────────────────────────────────────────────────────────── */
+
 function rzFoot() {
     if (!ron("showFooter", "yes")) return "";
 
@@ -2318,7 +2577,9 @@ function rzFoot() {
     var mail = rcfg("email", cfg("email", ""));
     var updated = ron("showUpdated", "yes") ? rcfg("updated", "") : "";
     var link = (ron("showContactLink", "yes") && mail)
-        ? '<a href="mailto:' + esc(mail) + '">' + esc(rcfg("contactLinkLabel", "Let\u2019s connect")) + '</a>'
+        ? '<a href="mailto:' + esc(mail) + '">' +
+          esc(rcfg("contactLinkLabel", "Let\u2019s connect")) +
+          '</a>'
         : "";
 
     var left = [note ? esc(note) : "", link].filter(Boolean).join(" · ");
@@ -2327,22 +2588,34 @@ function rzFoot() {
     return '<footer class="rz-foot">' +
         '<span>' + left + '</span>' +
         (updated ? '<span class="rz-updated">' +
-            esc(rcfg("updatedLabel", "Updated")) + ' ' + esc(updated) + '</span>' : '') +
+            esc(rcfg("updatedLabel", "Updated")) + ' ' + esc(updated) +
+            '</span>' : '') +
         '</footer>';
 }
+
+
+/* ── UTILITY FUNCTIONS ──────────────────────────────────────────────
+
+   Small helpers used throughout the résumé renderer.
+
+   ──────────────────────────────────────────────────────────────────── */
 
 /* A printed résumé reads better as "github.com/name" than as a full URL. */
 function rzHost(url) {
     return String(url || "").replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
 }
 
+
+/* Breadcrumb navigation helper. */
 function crumbs(items) {
-    return '<nav class="crumbs" aria-label="Breadcrumb">' + items.map(function (it, i) {
-        var sep = i ? '<i class="fa-solid fa-angle-right"></i>' : '';
-        return sep + (it[1]
-            ? '<a href="' + esc(it[1]) + '" data-route>' + esc(it[0]) + '</a>'
-            : '<span aria-current="page">' + esc(it[0]) + '</span>');
-    }).join("") + '</nav>';
+    return '<nav class="crumbs" aria-label="Breadcrumb">' +
+        items.map(function (it, i) {
+            var sep = i ? '<i class="fa-solid fa-angle-right"></i>' : '';
+            return sep + (it[1]
+                ? '<a href="' + esc(it[1]) + '" data-route>' + esc(it[0]) + '</a>'
+                : '<span aria-current="page">' + esc(it[0]) + '</span>');
+        }).join("") +
+        '</nav>';
 }
 
 /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
@@ -2382,7 +2655,7 @@ function starsHTML(rating) {
 // Helper function to format role text - only last comma separated part goes to new line
 function formatRole(text) {
     if (!text) return '';
-    var parts = text.split(',').map(function(s) { return s.trim(); });
+    var parts = text.split(',').map(function (s) { return s.trim(); });
     if (parts.length <= 1) {
         return '<span class="role-part">' + esc(text) + '</span>';
     }
@@ -2390,7 +2663,7 @@ function formatRole(text) {
     var lastPart = parts.pop();
     var firstParts = parts.join(', ');
     return '<span class="role-part">' + esc(firstParts) + '</span>' +
-           '<span class="role-part role-country">' + esc(lastPart) + '</span>';
+        '<span class="role-part role-country">' + esc(lastPart) + '</span>';
 }
 
 function tstHTML(n) {
@@ -2406,7 +2679,7 @@ function tstHTML(n) {
             '<span class="quote-mark">&ldquo;</span>' +
             '<blockquote>' + esc(t.quote) + '</blockquote>' +
             '<div class="tst-foot">' + avatar(t.avatar, t.name) +
-            '<div class="tst-who"><b>' + esc(t.name) + '</b>' + 
+            '<div class="tst-who"><b>' + esc(t.name) + '</b>' +
             (t.role || t.project ? formatRole(t.role || t.project) : '') +
             '</div>' +
             starsHTML(r) +
@@ -2422,14 +2695,14 @@ function tstHTML(n) {
     if (prefersReduced) {
         return '<section id="testimonials" class="section"><div class="shell">' +
             secHead("testimonials", n, true) +
-            '<div class="tst-grid">' + 
+            '<div class="tst-grid">' +
             list.map(function (t, i) {
                 var r = Math.max(0, Math.min(5, Number(t.rating) || 5));
                 return '<article class="card tst" data-reveal style="--d:' + (i * 70) + 'ms">' +
                     '<span class="quote-mark">&ldquo;</span>' +
                     '<blockquote>' + esc(t.quote) + '</blockquote>' +
                     '<div class="tst-foot">' + avatar(t.avatar, t.name) +
-                    '<div class="tst-who"><b>' + esc(t.name) + '</b>' + 
+                    '<div class="tst-who"><b>' + esc(t.name) + '</b>' +
                     (t.role || t.project ? formatRole(t.role || t.project) : '') +
                     '</div>' +
                     starsHTML(r) +
@@ -2455,23 +2728,23 @@ function starsHTML(rating) {
     var hasHalf = (rating - filled) >= 0.5;
     var total = 5;
     var html = '<div class="stars">';
-    
+
     // Filled stars
     for (var i = 0; i < filled; i++) {
         html += '<i class="fa-solid fa-star"></i>';
     }
-    
+
     // Half star if needed
     if (hasHalf) {
         html += '<i class="fa-solid fa-star-half-alt"></i>';
         filled++; // increment so we don't add extra regular star
     }
-    
+
     // Regular (empty) stars
     for (var i = filled; i < total; i++) {
         html += '<i class="fa-regular fa-star"></i>';
     }
-    
+
     html += '</div>';
     return html;
 }
