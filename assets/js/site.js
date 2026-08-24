@@ -2009,11 +2009,12 @@ function buildControlBar() {
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   H E A D E R   B L O C K
+   H E A D E R   B L O C K   —  FIXED LAYOUT
    ───────────────────────────────────────────────────────────────────── */
 
 /**
  * Render the nameplate with name, title, and optional photo
+ * Uses flexbox with photo on left, text on right
  * @returns {string}
  */
 function renderHeader() {
@@ -2051,13 +2052,20 @@ function renderHeader() {
     const align = ropt('headerAlign', 'left');
     const shape = ropt('photoShape', 'circle');
 
+    // Layout: photo on left (if present), text on right with flex alignment
     return `
         <header class="rz-block rz-mast" data-align="${esc(align)}">
-            ${portrait ? `<div class="rz-portrait" data-shape="${esc(shape)}">${portrait}</div>` : ''}
-            <div class="rz-mast-text">
-                ${ron('showName', 'yes') && name ? `<h1 class="rz-name">${esc(name)}</h1>` : ''}
-                ${headline ? `<p class="rz-headline">${markup(headline)}</p>` : ''}
-                ${tagline ? `<p class="rz-tagline">${esc(tagline)}</p>` : ''}
+            <div class="rz-mast-inner">
+                ${portrait ? `
+                    <div class="rz-portrait" data-shape="${esc(shape)}">
+                        ${portrait}
+                    </div>
+                ` : ''}
+                <div class="rz-mast-text">
+                    ${ron('showName', 'yes') && name ? `<h1 class="rz-name">${esc(name)}</h1>` : ''}
+                    ${headline ? `<p class="rz-headline">${markup(headline)}</p>` : ''}
+                    ${tagline ? `<p class="rz-tagline">${esc(tagline)}</p>` : ''}
+                </div>
             </div>
         </header>
     `;
@@ -2065,7 +2073,7 @@ function renderHeader() {
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   C O N T A C T   B A R
+   C O N T A C T   B A R   —  WITH CLICKABLE URLS
    ───────────────────────────────────────────────────────────────────── */
 
 /**
@@ -2092,26 +2100,29 @@ function renderContactBar() {
 }
 
 /**
- * Format a single contact item
+ * Format a single contact item — URLs are always clickable
  * @param {Array} item - [icon, label, url, title]
  * @param {boolean} showIcons - Whether to show icons
  * @returns {string}
  */
 function formatContactItem(item, showIcons) {
     const [iconClass, label, url, title] = item;
+    
+    // Build the inner content
     const inner = `
         ${showIcons ? `<i class="${esc(iconClass)}" aria-hidden="true"></i>` : ''}
         <span>${esc(label)}</span>
     `;
 
-    if (!url) {
-        return `<span class="rz-c">${inner}</span>`;
+    // Always wrap in anchor if URL exists — makes it clickable in PDF
+    if (url) {
+        const target = /^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
+        const titleAttr = title ? ` title="${esc(title)}"` : '';
+        return `<a class="rz-c" href="${esc(url)}"${target}${titleAttr}>${inner}</a>`;
     }
 
-    const target = /^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
-    const titleAttr = title ? ` title="${esc(title)}"` : '';
-
-    return `<a class="rz-c" href="${esc(url)}"${target}${titleAttr}>${inner}</a>`;
+    // Fallback: plain text with no link
+    return `<span class="rz-c">${inner}</span>`;
 }
 
 /**
@@ -2125,7 +2136,7 @@ function buildContactItems() {
         location: () => {
             const value = rcfg('location', cfg('location', ''));
             return (ron('showLocation', 'yes') && value)
-                ? [['fa-solid fa-location-dot', value, '', '']]
+                ? [['fa-solid fa-location-dot', value, null, '']]
                 : [];
         },
 
@@ -2167,6 +2178,7 @@ function buildContactItems() {
                 const text = useLabels
                     ? (s.platform || extractHost(s.url))
                     : (fullUrls ? s.url : extractHost(s.url));
+                // Always include full URL for clicking
                 return [icon(s.icon, 'fa-solid fa-link'), text, s.url, s.platform];
             });
         }
