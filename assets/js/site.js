@@ -2358,6 +2358,20 @@ function starsHTML(rating) {
 }
 
 /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
+// Helper function to format role text - only last comma separated part goes to new line
+function formatRole(text) {
+    if (!text) return '';
+    var parts = text.split(',').map(function(s) { return s.trim(); });
+    if (parts.length <= 1) {
+        return '<span class="role-part">' + esc(text) + '</span>';
+    }
+    // Last part (country) goes on new line
+    var lastPart = parts.pop();
+    var firstParts = parts.join(', ');
+    return '<span class="role-part">' + esc(firstParts) + '</span>' +
+           '<span class="role-part role-country">' + esc(lastPart) + '</span>';
+}
+
 function tstHTML(n) {
     var list = TSTS.filter(function (t) { return on2(t.show); });
     if (!list.length) return "";
@@ -2371,7 +2385,9 @@ function tstHTML(n) {
             '<span class="quote-mark">&ldquo;</span>' +
             '<blockquote>' + esc(t.quote) + '</blockquote>' +
             '<div class="tst-foot">' + avatar(t.avatar, t.name) +
-            '<div class="tst-who"><b>' + esc(t.name) + '</b><span>' + esc(t.role || t.project || "") + '</span></div>' +
+            '<div class="tst-who"><b>' + esc(t.name) + '</b>' + 
+            (t.role || t.project ? formatRole(t.role || t.project) : '') +
+            '</div>' +
             starsHTML(r) +
             '</div></article>';
     }).join("");
@@ -2392,7 +2408,9 @@ function tstHTML(n) {
                     '<span class="quote-mark">&ldquo;</span>' +
                     '<blockquote>' + esc(t.quote) + '</blockquote>' +
                     '<div class="tst-foot">' + avatar(t.avatar, t.name) +
-                    '<div class="tst-who"><b>' + esc(t.name) + '</b><span>' + esc(t.role || t.project || "") + '</span></div>' +
+                    '<div class="tst-who"><b>' + esc(t.name) + '</b>' + 
+                    (t.role || t.project ? formatRole(t.role || t.project) : '') +
+                    '</div>' +
                     starsHTML(r) +
                     '</div></article>';
             }).join("") +

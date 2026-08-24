@@ -2472,9 +2472,16 @@ h4 {
     color: var(--text);
 }
 
-.tst-who span {
+.tst-who .role-part {
     font-size: 0.75rem;
     color: var(--faint);
+    display: block;
+}
+
+.tst-who .role-country {
+    font-size: 0.75rem;
+    color: var(--faint);
+    display: block;
 }
 
 /* ── Stars ────────────────────────────────────────────────── */
@@ -2577,7 +2584,13 @@ h4 {
         display: block;
     }
 
-    .tst-who span {
+    .tst-who .role-part {
+        font-size: 0.8rem;
+        display: block;
+        color: var(--faint);
+    }
+
+    .tst-who .role-country {
         font-size: 0.8rem;
         display: block;
         color: var(--faint);
@@ -2634,12 +2647,16 @@ h4 {
         font-size: 0.9rem;
     }
 
-    .tst-who span {
+    .tst-who .role-part {
+        font-size: 0.75rem;
+    }
+
+    .tst-who .role-country {
         font-size: 0.75rem;
     }
 
     .stars {
-        font-size: 0.8rem;
+        font-size: 0.7rem;
     }
 }
 
