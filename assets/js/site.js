@@ -2410,6 +2410,33 @@ function tstHTML(n) {
         '</section>';
 }
 
+// Helper function to generate stars with filled and regular
+function starsHTML(rating) {
+    var filled = Math.floor(rating);
+    var hasHalf = (rating - filled) >= 0.5;
+    var total = 5;
+    var html = '<div class="stars">';
+    
+    // Filled stars
+    for (var i = 0; i < filled; i++) {
+        html += '<i class="fa-solid fa-star"></i>';
+    }
+    
+    // Half star if needed
+    if (hasHalf) {
+        html += '<i class="fa-solid fa-star-half-alt"></i>';
+        filled++; // increment so we don't add extra regular star
+    }
+    
+    // Regular (empty) stars
+    for (var i = filled; i < total; i++) {
+        html += '<i class="fa-regular fa-star"></i>';
+    }
+    
+    html += '</div>';
+    return html;
+}
+
 /* ── SERVICES ─────────────────────────────────────────────────────────── */
 function svcHTML(n) {
     var list = SVCS.filter(function (s) { return on2(s.show); });

@@ -2492,6 +2492,14 @@ h4 {
     align-items: center;
 }
 
+.stars i {
+    font-size: inherit;
+}
+
+.stars .fa-regular {
+    opacity: 0.3;
+}
+
 /* .proj-star is absolutely positioned on a project thumbnail — undo that
    here so the same icon can be reused for ratings. */
 .stars .proj-star {
@@ -2534,6 +2542,60 @@ h4 {
     }
 }
 
+@media (max-width: 620px) {
+    .tst-foot {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.3rem 0.8rem;
+        align-items: start;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line-soft);
+    }
+
+    .tst-foot img,
+    .tst-foot .av-fallback {
+        width: 48px;
+        height: 48px;
+        font-size: 0.8rem;
+        grid-row: 1 / 4;
+        grid-column: 1;
+        align-self: start;
+        margin-top: 0.1rem;
+    }
+
+    .tst-who {
+        grid-column: 2;
+        grid-row: 1;
+        display: grid;
+        gap: 0.05rem;
+        padding-top: 0.1rem;
+    }
+
+    .tst-who b {
+        font-size: 0.95rem;
+        font-weight: 600;
+        display: block;
+    }
+
+    .tst-who span {
+        font-size: 0.8rem;
+        display: block;
+        color: var(--faint);
+    }
+
+    .stars {
+        grid-column: 2;
+        grid-row: 2;
+        margin-left: 0;
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        padding-top: 0.1rem;
+    }
+}
+
 @media (max-width: 480px) {
     .tst-scroll-track {
         gap: 1rem;
@@ -2561,6 +2623,25 @@ h4 {
     }
 }
 
+@media (max-width: 420px) {
+    .tst-foot img,
+    .tst-foot .av-fallback {
+        width: 44px;
+        height: 44px;
+    }
+
+    .tst-who b {
+        font-size: 0.9rem;
+    }
+
+    .tst-who span {
+        font-size: 0.75rem;
+    }
+
+    .stars {
+        font-size: 0.8rem;
+    }
+}
 
 /* ==========================================================================
    EXPERIENCE TIMELINE
