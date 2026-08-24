@@ -1623,999 +1623,1198 @@ function pageMissing(slug) {
 }
 
 /* ==========================================================================
-   RÉSUMÉ  (the unlisted page — see resumePath() above)
+   RÉSUMÉ  —  Modern Print-First Document System
+   ==========================================================================
 
-   Everything on this page is decided by the 📄 Resume sheet: which blocks
-   appear, what order they run in, which fields inside each block are drawn,
-   how many rows each one takes, and what every heading and label says.
-   Content still comes from the sheets that already build the site — 🗓
-   Experience, 🚀 Projects, 🧠 Skills, 🧰 Tools, 📊 Stats, 🔗 Social Links,
-   🏅 Resume Extras, ⚙ Config — but nothing is drawn unless the résumé sheet
-   asks for it, and every value can be overridden there.
+   A clean, minimal résumé builder with print-first philosophy.
+   Every element is sheet-driven with sensible defaults.
 
-   Three rules make that work:
-     • rcfg(key, fallback) reads 📄 Resume first, ⚙ Config second, so a
-       blank cell means "use what the site already says", not "show nothing".
-     • ron("show…") turns any block or field off. Defaults are chosen so an
-       empty sheet still renders a complete, sensible résumé.
-     • "Section Order" reorders the blocks. Unnamed blocks keep their default
-       place unless "Strict Section Order" is set, in which case naming a
-       block is the only way to include it.
+   ─── Architecture ──────────────────────────────────────────────────
 
-   Laid out as a document, not a web page: a nameplate, a contact rule, then
-   sections whose headings sit in a left rail so the reading column stays a
-   comfortable measure. What prints is what the screen shows.
+   📄 Resume Sheet  →  Config Overrides  →  Hard Defaults
+          ↓                  ↓                   ↓
+      rcfg() ──────→  ron() / rnum() / ropt() / rlist()
+          ↓
+   Block Registry  →  Ordered Sequence  →  HTML Output
+
+   ─── Design Principles ─────────────────────────────────────────────
+
+   • Print-first — what you see is what prints
+   • Content before chrome — no decorative cruft
+   • Responsive by default — works at any size
+   • Sheet-driven — every toggle, label, and count is controllable
+   • Graceful fallbacks — empty cells produce sensible results
+
    ========================================================================== */
 
 
-/* ── BLOCK ORDER ──────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   C O R E   C O N F I G U R A T I O N
+   ───────────────────────────────────────────────────────────────────── */
 
-   Every block the page can draw, in the order it takes when the sheet says
-   nothing about ordering. Blocks invented by the 🗓 Experience "Type" column
-   are spliced in after Experience — see rzDefaultOrder().
-
-   ──────────────────────────────────────────────────────────────────── */
-
-var RZ_ORDER = [
-    "header",
-    "contact",
-    "summary",
-    "stats",
-    "experience",
-    "projects",
-    "skills",
-    "education",
-    "extras"
+// Default section order. Custom blocks from Experience "Type" column
+// are injected after the main experience block.
+const RZ_BLOCK_ORDER = [
+    'header',      // name, title, photo
+    'contact',     // email, phone, socials
+    'summary',     // professional summary
+    'stats',       // key metrics
+    'experience',  // work history
+    'projects',    // selected work
+    'skills',      // technical expertise
+    'education',   // academic background
+    'extras'       // additional sections
 ];
 
 
-/* ── SHEET VALUE READERS ─────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   S H E E T   R E A D E R S
+   ─────────────────────────────────────────────────────────────────────
 
-   All four sit on top of rcfg(), so each one honours:
-      📄 Resume → ⚙ Config → hard default
-   in that order.
+   All readers follow the same hierarchy:
+      📄 Resume Sheet → ⚙ Config Sheet → Hard Default
 
-   ──────────────────────────────────────────────────────────────────── */
+   This means a blank cell means "use what the site already says",
+   not "show nothing".
+   ───────────────────────────────────────────────────────────────────── */
 
-/* A count from the sheet. Blank falls back to the default; 0 is honoured,
-   so "Projects Count: 0" is a legitimate way to drop the project list. */
+/**
+ * Read a numeric value from the sheet
+ * @param {string} key - The sheet cell name
+ * @param {number} dflt - Default value if blank
+ * @returns {number}
+ */
 function rnum(key, dflt) {
-    var raw = String(rcfg(key, "")).trim();
+    const raw = String(rcfg(key, '')).trim();
     if (!raw) return dflt;
 
-    var n = parseInt(raw.replace(/[^0-9]/g, ""), 10);
-    return isNaN(n) ? dflt : n;
+    const cleaned = raw.replace(/[^0-9]/g, '');
+    const parsed = parseInt(cleaned, 10);
+    return isNaN(parsed) ? dflt : parsed;
 }
 
-
-/* A lower-cased keyword — "Paper Size: A4" → "a4". */
+/**
+ * Read an option (lowercased keyword) from the sheet
+ * @param {string} key - The sheet cell name
+ * @param {string} dflt - Default value if blank
+ * @returns {string}
+ */
 function ropt(key, dflt) {
-    var v = String(rcfg(key, "")).trim().toLowerCase();
-    return v || (dflt || "");
+    const value = String(rcfg(key, '')).trim().toLowerCase();
+    return value || dflt || '';
 }
 
-
-/* A comma- or newline-separated cell, lower-cased for matching. */
+/**
+ * Read a list (comma or newline separated) from the sheet
+ * @param {string} key - The sheet cell name
+ * @returns {string[]}
+ */
 function rlist(key) {
-    return listOf(rcfg(key, "")).map(function (s) {
-        return s.toLowerCase();
-    });
+    const raw = rcfg(key, '');
+    return listOf(raw).map(s => s.toLowerCase());
 }
 
-
-/* Trim a list to a sheet count. Blank cell → the whole list untouched. */
+/**
+ * Cap an array to a sheet-defined limit
+ * @param {Array} arr - The array to cap
+ * @param {string} key - The sheet cell name for the limit
+ * @returns {Array}
+ */
 function rcap(arr, key) {
     if (!key) return arr;
 
-    var raw = String(rcfg(key, "")).trim();
+    const raw = String(rcfg(key, '')).trim();
     if (!raw) return arr;
 
-    var n = parseInt(raw.replace(/[^0-9]/g, ""), 10);
-    return isNaN(n) ? arr : arr.slice(0, n);
+    const limit = parseInt(raw.replace(/[^0-9]/g, ''), 10);
+    return isNaN(limit) ? arr : arr.slice(0, limit);
 }
 
 
-/* ── PAGE RENDERER ───────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   P A G E   R E N D E R E R
+   ───────────────────────────────────────────────────────────────────── */
 
-   The main entry point. Builds the registry, sequences the blocks,
-   wraps everything in the article shell.
-
-   ──────────────────────────────────────────────────────────────────── */
-
+/**
+ * Main entry point — renders the complete résumé page
+ * @returns {string} HTML for the résumé
+ */
 function pageResume() {
-    var reg = rzRegistry();
-    var body = rzSequence(reg)
-        .map(function (k) { return reg[k](); })
+    const registry = buildRegistry();
+    const blocks = buildBlockSequence(registry);
+
+    const body = blocks
+        .map(key => registry[key]())
         .filter(Boolean)
-        .join("");
+        .join('');
 
-    return '<article class="rz-page"' +
-        ' data-rz-theme="' + esc(ropt("resumeTheme", "paper")) + '"' +
-        ' data-rz-density="' + esc(ropt("resumeDensity", "comfortable")) + '"' +
-        ' data-rz-rules="' + (ron("showSectionRules", "yes") ? "on" : "off") + '">' +
-        rzStyle() +
-        '<div class="rz-shell">' +
-        rzBar() +
-        '<div class="rz-doc" id="resume-sheet">' +
-        body +
-        rzFoot() +
-        '</div>' +
-        '</div></article>';
+    const theme = ropt('resumeTheme', 'paper');
+    const density = ropt('resumeDensity', 'comfortable');
+    const showRules = ron('showSectionRules', 'yes') ? 'on' : 'off';
+
+    return `
+        <article class="rz-page"
+                 data-theme="${esc(theme)}"
+                 data-density="${esc(density)}"
+                 data-rules="${showRules}">
+            ${buildStyles()}
+            <div class="rz-shell">
+                ${buildControlBar()}
+                <div class="rz-doc" id="resume-sheet">
+                    ${body}
+                    ${buildFooter()}
+                </div>
+            </div>
+        </article>
+    `;
 }
 
 
-/* ── STYLESHEET GENERATOR ────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   S T Y L E   G E N E R A T O R
+   ───────────────────────────────────────────────────────────────────── */
 
-   Sheet-driven theming. Injected as a <style> rather than inline attributes
-   so one cell can restyle every block at once, and so the @page rule — which
-   has nowhere else to live — can be written from the sheet too.
+/**
+ * Build the dynamic stylesheet from sheet values
+ * @returns {string} Style tag with variables and @page rules
+ */
+function buildStyles() {
+    const accent = rcfg('resumeAccent', '');
+    const pageWidth = resolveCssLength(rcfg('pageWidth', ''), '880px');
+    const labelWidth = resolveCssLength(rcfg('labelWidth', ''), '150px');
+    const fontScale = String(rcfg('fontScale', '')).replace(/[^0-9.]/g, '');
 
-   ──────────────────────────────────────────────────────────────────── */
+    let css = '.rz-doc{';
+    if (accent) css += `--rz-accent:${accent};`;
+    if (pageWidth) css += `--rz-width:${pageWidth};`;
+    if (labelWidth) css += `--rz-label:${labelWidth};`;
+    if (fontScale) css += `--rz-scale:${fontScale};`;
+    css += '}';
 
-function rzStyle() {
-    var vars = {
-        "--rz-accent": rcfg("resumeAccent", ""),
-        "--rz-w": rzLen(rcfg("pageWidth", ""), "880px"),
-        "--rz-label": rzLen(rcfg("labelWidth", ""), "150px"),
-        "--rz-scale": String(rcfg("fontScale", "")).replace(/[^0-9.]/g, "")
+    // Print page configuration
+    const paperSize = ropt('paperSize', 'a4') === 'letter' ? 'letter' : 'A4';
+    const margin = resolveCssLength(rcfg('pageMargin', ''), '13mm 14mm');
+    css += `@media print{@page{size:${paperSize};margin:${margin};}}`;
+
+    // User-provided custom CSS (sanitized)
+    const customCss = String(rcfg('resumeCss', '')).replace(/[<>]/g, '');
+    css += customCss;
+
+    return `<style id="rz-vars">${css}</style>`;
+}
+
+/**
+ * Resolve a CSS length value from the sheet
+ * Accepts: "880", "880px", "60ch", "13mm 14mm"
+ * @param {string} value - The raw value from the sheet
+ * @param {string} fallback - Default if invalid
+ * @returns {string}
+ */
+function resolveCssLength(value, fallback) {
+    const str = String(value || '').trim();
+    if (!str) return fallback;
+
+    // Bare number → add px
+    if (/^[0-9.]+$/.test(str)) return str + 'px';
+
+    // Valid CSS length with units
+    if (/^[0-9a-z.%\s]+$/i.test(str)) return str;
+
+    return fallback;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   B L O C K   R E G I S T R Y
+   ─────────────────────────────────────────────────────────────────────
+
+   The registry is rebuilt on every render. Custom blocks from the
+   Experience sheet are dynamically added here.
+   ───────────────────────────────────────────────────────────────────── */
+
+/**
+ * Build the block registry
+ * @returns {Object} Map of block keys to render functions
+ */
+function buildRegistry() {
+    const registry = {
+        header: renderHeader,
+        contact: renderContactBar,
+        summary: renderSummary,
+        stats: renderStats,
+        experience: renderExperienceBlock,
+        projects: renderProjectsBlock,
+        skills: renderSkillsBlock,
+        education: renderEducationBlock,
+        extras: renderExtrasBlock
     };
 
-    var css = ".rz-doc{";
-    Object.keys(vars).forEach(function (k) {
-        if (vars[k]) css += k + ":" + vars[k] + ";";
-    });
-    css += "}";
-
-    var size = ropt("paperSize", "a4") === "letter" ? "letter" : "A4";
-    var margin = rzLen(rcfg("pageMargin", ""), "13mm 14mm");
-    css += "@media print{@page{size:" + size + ";margin:" + margin + ";}}";
-
-    // Author CSS from the sheet, with tag-closing characters removed so a
-    // stray "</style>" in a cell can't break out of the block.
-    css += String(rcfg("resumeCss", "")).replace(/[<>]/g, "");
-
-    return '<style id="rz-vars">' + css + '</style>';
-}
-
-
-/* A CSS length the sheet can write loosely — "880", "880px", "60ch", "13mm
-   14mm" all work. Anything with characters that don't belong in a length is
-   dropped in favour of the default rather than emitted into the stylesheet. */
-function rzLen(v, dflt) {
-    var s = String(v || "").trim();
-    if (!s) return dflt;
-
-    if (/^[0-9.]+$/.test(s)) return s + "px";
-    return /^[0-9a-z.%\s]+$/i.test(s) ? s : dflt;
-}
-
-
-/* ── BLOCK REGISTRY ──────────────────────────────────────────────────
-
-   The registry is rebuilt on every render because the 🗓 Experience sheet
-   can invent blocks: any Type that isn't work-like or education-like
-   becomes a block of its own, keyed by its own slug, so "Volunteering" in
-   the sheet can be named in Section Order without touching this file.
-
-   ──────────────────────────────────────────────────────────────────── */
-
-function rzRegistry() {
-    var reg = {
-        header: rzHeader,
-        contact: rzContactBar,
-        summary: rzSummaryBlock,
-        stats: rzStatsBlock,
-        experience: rzExperienceBlock,
-        projects: rzProjectsBlock,
-        skills: rzSkillsBlock,
-        education: rzEducationBlock,
-        extras: rzExtrasBlock
-    };
-
-    rzGroups().forEach(function (g) {
-        if (g.key === "__work" || g.key === "__edu" || reg[g.key]) return;
-        reg[g.key] = function () { return rzHistoryBlock(g); };
+    // Add custom blocks from Experience "Type" column
+    const groups = buildExperienceGroups();
+    groups.forEach(group => {
+        if (group.key === '__work' || group.key === '__edu') return;
+        if (registry[group.key]) return;
+        registry[group.key] = () => renderHistoryBlock(group);
     });
 
-    return reg;
+    return registry;
 }
 
-
-function rzDefaultOrder(reg) {
-    var custom = Object.keys(reg).filter(function (k) {
-        return RZ_ORDER.indexOf(k) === -1;
-    });
-
-    var out = [];
-    RZ_ORDER.forEach(function (k) {
-        out.push(k);
-        if (k === "experience") out = out.concat(custom);
-    });
-
-    return out;
-}
-
-
-function rzSequence(reg) {
-    var named = listOf(rcfg("sectionOrder", ""))
+/**
+ * Determine the block sequence based on sheet ordering
+ * @param {Object} registry - The block registry
+ * @returns {string[]} Ordered list of block keys
+ */
+function buildBlockSequence(registry) {
+    const named = listOf(rcfg('sectionOrder', ''))
         .map(slugify)
         .filter(Boolean);
 
-    var out = [], seen = {};
+    const seen = new Set();
+    const result = [];
 
-    named.forEach(function (k) {
-        if (reg[k] && !seen[k]) {
-            seen[k] = 1;
-            out.push(k);
+    // User-specified order goes first
+    named.forEach(key => {
+        if (registry[key] && !seen.has(key)) {
+            seen.add(key);
+            result.push(key);
         }
     });
 
-    // Naming a few blocks normally means "these first, the rest after".
-    // Strict Section Order turns it into "these only".
-    if (named.length && ron("strictSectionOrder", "no")) return out;
+    // Strict mode: only user-specified blocks
+    if (named.length && ron('strictSectionOrder', 'no')) {
+        return result;
+    }
 
-    rzDefaultOrder(reg).forEach(function (k) {
-        if (reg[k] && !seen[k]) {
-            seen[k] = 1;
-            out.push(k);
+    // Default order with custom blocks injected after 'experience'
+    const defaultOrder = buildDefaultOrder(registry);
+    defaultOrder.forEach(key => {
+        if (registry[key] && !seen.has(key)) {
+            seen.add(key);
+            result.push(key);
         }
     });
 
-    return out;
+    return result;
+}
+
+/**
+ * Build the default block order
+ * @param {Object} registry - The block registry
+ * @returns {string[]}
+ */
+function buildDefaultOrder(registry) {
+    const customBlocks = Object.keys(registry)
+        .filter(key => !RZ_BLOCK_ORDER.includes(key));
+
+    const result = [];
+    RZ_BLOCK_ORDER.forEach(key => {
+        result.push(key);
+        if (key === 'experience') {
+            result.push(...customBlocks);
+        }
+    });
+
+    return result;
 }
 
 
-/* ── SECTION SHELL ───────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   S E C T I O N   W R A P P E R
+   ───────────────────────────────────────────────────────────────────── */
 
-   Heading in the left rail, content in the reading column. Dropped whole
-   when its body came back empty, so a switched-off sheet never leaves an
-   orphan heading behind.
+/**
+ * Wrap content in a labelled section with left-rail heading
+ * @param {string} key - Unique section identifier
+ * @param {string} title - Section heading
+ * @param {string} body - HTML content
+ * @param {string} className - Optional extra class
+ * @returns {string}
+ */
+function section(key, title, body, className) {
+    if (!body) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const classes = `rz-block rz-sec${className ? ' ' + className : ''}`;
+    const heading = title
+        ? `<div class="rz-sec-label"><h2>${esc(title)}</h2></div>`
+        : '<div class="rz-sec-label"></div>';
 
-function rzSec(key, title, body, cls) {
-    if (!body) return "";
-
-    return '<section class="rz-block rz-sec' + (cls ? ' ' + cls : '') + '" id="rz-' + esc(key) + '">' +
-        (title ? '<div class="rz-sec-label"><h2>' + esc(title) + '</h2></div>' : '<div class="rz-sec-label"></div>') +
-        '<div class="rz-sec-body">' + body + '</div>' +
-        '</section>';
+    return `
+        <section class="${classes}" id="rz-${esc(key)}">
+            ${heading}
+            <div class="rz-sec-body">${body}</div>
+        </section>
+    `;
 }
 
 
-/* ── CONTROL BAR ─────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   C O N T R O L   B A R
+   ───────────────────────────────────────────────────────────────────── */
 
-   Screen only — the print stylesheet drops it. Every button is optional.
+/**
+ * Build the screen-only control bar with action buttons
+ * @returns {string}
+ */
+function buildControlBar() {
+    if (!ron('showControlBar', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const pdfUrl = rcfg('pdfUrl', cfg('resumeUrl', ''));
+    let actions = '';
 
-function rzBar() {
-    if (!ron("showControlBar", "yes")) return "";
-
-    var pdf = rcfg("pdfUrl", cfg("resumeUrl", ""));
-    var acts = "";
-
-    if (ron("showPdfButton", "yes") && pdf) {
-        acts += '<a class="rz-btn" href="' + esc(pdf) + '" target="_blank" rel="noopener">' +
-            '<i class="fa-solid fa-file-arrow-down"></i>' +
-            esc(rcfg("pdfButtonLabel", "PDF")) +
-            '</a>';
+    // PDF download button
+    if (ron('showPdfButton', 'yes') && pdfUrl) {
+        actions += `
+            <a class="rz-btn" href="${esc(pdfUrl)}" target="_blank" rel="noopener">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                ${esc(rcfg('pdfButtonLabel', 'PDF'))}
+            </a>
+        `;
     }
 
-    if (ron("showPrintButton", "yes")) {
-        acts += '<button class="rz-btn" type="button" data-resume-print>' +
-            '<i class="fa-solid fa-print"></i>' +
-            esc(rcfg("printButtonLabel", "Print / Save as PDF")) +
-            '</button>';
+    // Print button
+    if (ron('showPrintButton', 'yes')) {
+        actions += `
+            <button class="rz-btn" type="button" data-resume-print>
+                <i class="fa-solid fa-print"></i>
+                ${esc(rcfg('printButtonLabel', 'Print / Save as PDF'))}
+            </button>
+        `;
     }
 
-    if (ron("showBackButton", "yes")) {
-        acts += '<a class="rz-btn rz-btn-solid" href="' + esc(urlHome()) + '">' +
-            '<i class="fa-solid fa-arrow-left"></i>' +
-            esc(rcfg("backButtonLabel", "Back to site")) +
-            '</a>';
+    // Back button
+    if (ron('showBackButton', 'yes')) {
+        actions += `
+            <a class="rz-btn rz-btn-solid" href="${esc(urlHome())}">
+                <i class="fa-solid fa-arrow-left"></i>
+                ${esc(rcfg('backButtonLabel', 'Back to site'))}
+            </a>
+        `;
     }
 
-    var badge = ron("showUnlistedBadge", "yes")
-        ? '<span class="rz-flag"><i class="fa-solid fa-lock"></i>' +
-          esc(rcfg("unlistedBadgeText", "unlisted · not indexed")) +
-          '</span>'
+    // Unlisted badge
+    const badge = ron('showUnlistedBadge', 'yes')
+        ? `<span class="rz-flag"><i class="fa-solid fa-lock"></i>${esc(rcfg('unlistedBadgeText', 'unlisted · not indexed'))}</span>`
         : '';
 
-    if (!badge && !acts) return "";
+    if (!badge && !actions) return '';
 
-    return '<div class="rz-bar">' +
-        badge +
-        '<div class="rz-bar-acts">' + acts + '</div>' +
-        '</div>';
+    return `
+        <div class="rz-bar">
+            ${badge}
+            <div class="rz-bar-actions">${actions}</div>
+        </div>
+    `;
 }
 
 
-/* ── NAMEPLATE ───────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   H E A D E R   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   The header block with name, headline, tagline, and optional photo.
+/**
+ * Render the nameplate with name, title, and optional photo
+ * @returns {string}
+ */
+function renderHeader() {
+    if (!ron('showHeader', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const name = rcfg('fullName', rcfg('aboutName', cfg('brandName', 'Résumé')));
+    const headline = ron('showHeadline', 'yes')
+        ? rcfg('headline', rcfg('aboutRole', cfg('role', '')))
+        : '';
 
-function rzHeader() {
-    if (!ron("showHeader", "yes")) return "";
+    const tagline = ron('showTagline', 'yes')
+        ? rcfg('tagline', [cfg('role'), cfg('location')].filter(Boolean).join(' · '))
+        : '';
 
-    var name = rcfg("fullName", rcfg("aboutName", cfg("brandName", "Résumé")));
-    var headline = ron("showHeadline", "yes")
-        ? rcfg("headline", rcfg("aboutRole", cfg("role", "")))
-        : "";
-    var tagline = ron("showTagline", "yes")
-        ? rcfg("tagline", [cfg("role"), cfg("location")].filter(Boolean).join(" · "))
-        : "";
+    // Photo handling
+    const photoSrc = ron('showPhoto', 'yes')
+        ? rcfg('photoUrl', cfg('aboutImageUrl', ''))
+        : '';
 
-    var src = ron("showPhoto", "yes") ? rcfg("photoUrl", cfg("aboutImageUrl", "")) : "";
-    var portrait = "";
-
-    if (src) {
-        // A dead image URL would otherwise print the alt text across the
-        // portrait, so it degrades to initials the way avatars do elsewhere.
-        portrait = '<img src="' + esc(resolveAsset(src)) + '" alt="' + esc(name) + '"' +
-            ' onerror="this.outerHTML=\'<span class=&quot;rz-initials&quot;>' +
-            esc(initials(name)) + '</span>\'">';
-    } else if (ron("showPhoto", "yes") && ron("showInitials", "no")) {
-        portrait = '<span class="rz-initials">' + esc(initials(name)) + '</span>';
+    let portrait = '';
+    if (photoSrc) {
+        // Fall back to initials if image fails to load
+        portrait = `
+            <img src="${esc(resolveAsset(photoSrc))}"
+                 alt="${esc(name)}"
+                 onerror="this.outerHTML='<span class=&quot;rz-initials&quot;>${esc(initials(name))}</span>'">
+        `;
+    } else if (ron('showPhoto', 'yes') && ron('showInitials', 'no')) {
+        portrait = `<span class="rz-initials">${esc(initials(name))}</span>`;
     }
 
-    if (!name && !headline && !tagline && !portrait) return "";
+    // Early exit if nothing to show
+    if (!name && !headline && !tagline && !portrait) return '';
 
-    return '<header class="rz-block rz-mast" data-align="' + esc(ropt("headerAlign", "left")) + '">' +
-        (portrait ? '<div class="rz-portrait" data-shape="' +
-            esc(ropt("photoShape", "circle")) + '">' + portrait + '</div>' : '') +
-        '<div class="rz-mast-text">' +
-        (ron("showName", "yes") && name ? '<h1 class="rz-name">' + esc(name) + '</h1>' : '') +
-        (headline ? '<p class="rz-headline">' + markup(headline) + '</p>' : '') +
-        (tagline ? '<p class="rz-tagline">' + esc(tagline) + '</p>' : '') +
-        '</div></header>';
+    const align = ropt('headerAlign', 'left');
+    const shape = ropt('photoShape', 'circle');
+
+    return `
+        <header class="rz-block rz-mast" data-align="${esc(align)}">
+            ${portrait ? `<div class="rz-portrait" data-shape="${esc(shape)}">${portrait}</div>` : ''}
+            <div class="rz-mast-text">
+                ${ron('showName', 'yes') && name ? `<h1 class="rz-name">${esc(name)}</h1>` : ''}
+                ${headline ? `<p class="rz-headline">${markup(headline)}</p>` : ''}
+                ${tagline ? `<p class="rz-tagline">${esc(tagline)}</p>` : ''}
+            </div>
+        </header>
+    `;
 }
 
 
-/* ── CONTACT BAR ─────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   C O N T A C T   B A R
+   ───────────────────────────────────────────────────────────────────── */
 
-   Each strand is individually switchable and individually overridable, and
-   "Contact Order" decides the sequence. Social rows come from 🔗 Social
-   Links and can be filtered to a named subset.
+/**
+ * Render the contact information bar
+ * @returns {string}
+ */
+function renderContactBar() {
+    if (!ron('showContact', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const items = buildContactItems();
+    if (!items.length) return '';
 
-function rzContactBar() {
-    if (!ron("showContact", "yes")) return "";
+    const showIcons = ron('contactIcons', 'yes');
+    const body = `
+        <div class="rz-contact${showIcons ? '' : ' rz-no-icons'}">
+            ${items.map(item => formatContactItem(item, showIcons)).join('')}
+        </div>
+    `;
 
-    var items = rzContactItems();
-    if (!items.length) return "";
-
-    var icons = ron("contactIcons", "yes");
-    var body = '<div class="rz-contact' + (icons ? '' : ' rz-no-icons') + '">' +
-        items.map(function (it) {
-            var inner = (icons ? '<i class="' + esc(it[0]) + '" aria-hidden="true"></i>' : '') +
-                '<span>' + esc(it[1]) + '</span>';
-
-            if (!it[2]) return '<span class="rz-c">' + inner + '</span>';
-
-            return '<a class="rz-c" href="' + esc(it[2]) + '"' +
-                (/^https?:/i.test(it[2]) ? ' target="_blank" rel="noopener"' : '') +
-                (it[3] ? ' title="' + esc(it[3]) + '"' : '') + '>' +
-                inner +
-                '</a>';
-        }).join("") +
-        '</div>';
-
-    var title = rcfg("contactTitle", "");
+    const title = rcfg('contactTitle', '');
     return title
-        ? rzSec("contact", title, body)
-        : '<div class="rz-block rz-contactbar">' + body + '</div>';
+        ? section('contact', title, body)
+        : `<div class="rz-block rz-contactbar">${body}</div>`;
 }
 
+/**
+ * Format a single contact item
+ * @param {Array} item - [icon, label, url, title]
+ * @param {boolean} showIcons - Whether to show icons
+ * @returns {string}
+ */
+function formatContactItem(item, showIcons) {
+    const [iconClass, label, url, title] = item;
+    const inner = `
+        ${showIcons ? `<i class="${esc(iconClass)}" aria-hidden="true"></i>` : ''}
+        <span>${esc(label)}</span>
+    `;
 
-function rzContactItems() {
-    var full = ron("contactFullUrls", "no");
+    if (!url) {
+        return `<span class="rz-c">${inner}</span>`;
+    }
 
-    var build = {
-        location: function () {
-            var v = rcfg("location", cfg("location", ""));
-            return (ron("showLocation", "yes") && v)
-                ? [["fa-solid fa-location-dot", v, "", ""]]
+    const target = /^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : '';
+    const titleAttr = title ? ` title="${esc(title)}"` : '';
+
+    return `<a class="rz-c" href="${esc(url)}"${target}${titleAttr}>${inner}</a>`;
+}
+
+/**
+ * Build the list of contact items from sheet data
+ * @returns {Array[]}
+ */
+function buildContactItems() {
+    const fullUrls = ron('contactFullUrls', 'no');
+
+    const builders = {
+        location: () => {
+            const value = rcfg('location', cfg('location', ''));
+            return (ron('showLocation', 'yes') && value)
+                ? [['fa-solid fa-location-dot', value, '', '']]
                 : [];
         },
 
-        email: function () {
-            var v = rcfg("email", cfg("email", ""));
-            return (ron("showEmail", "yes") && v)
-                ? [["fa-solid fa-envelope", v, "mailto:" + v, ""]]
+        email: () => {
+            const value = rcfg('email', cfg('email', ''));
+            return (ron('showEmail', 'yes') && value)
+                ? [['fa-solid fa-envelope', value, `mailto:${value}`, '']]
                 : [];
         },
 
-        phone: function () {
-            var v = rcfg("phone", cfg("whatsappNumber", ""));
-            return (ron("showPhone", "yes") && v)
-                ? [["fa-solid fa-phone", v, "tel:" + String(v).replace(/[^\d+]/g, ""), ""]]
+        phone: () => {
+            const value = rcfg('phone', cfg('whatsappNumber', ''));
+            return (ron('showPhone', 'yes') && value)
+                ? [['fa-solid fa-phone', value, `tel:${String(value).replace(/[^\d+]/g, '')}`, '']]
                 : [];
         },
 
-        website: function () {
-            var v = rcfg("website", cfg("siteUrl", ""));
-            return (ron("showWebsite", "yes") && v)
-                ? [["fa-solid fa-globe", full ? v : rzHost(v), v, ""]]
+        website: () => {
+            const value = rcfg('website', cfg('siteUrl', ''));
+            return (ron('showWebsite', 'yes') && value)
+                ? [['fa-solid fa-globe', fullUrls ? value : extractHost(value), value, '']]
                 : [];
         },
 
-        socials: function () {
-            if (!ron("showSocials", "yes")) return [];
+        socials: () => {
+            if (!ron('showSocials', 'yes')) return [];
 
-            var only = rlist("socialsInclude");
-            var rows = SOCIAL.filter(function (s) { return on2(s.show) && s.url; });
+            const only = rlist('socialsInclude');
+            let rows = SOCIAL.filter(s => on2(s.show) && s.url);
 
             if (only.length) {
-                rows = rows.filter(function (s) {
-                    return only.indexOf(String(s.platform || "").toLowerCase()) > -1;
-                });
+                rows = rows.filter(s => only.includes(String(s.platform || '').toLowerCase()));
             }
-            rows = rcap(rows, "socialsCount");
 
-            var byName = ron("socialLabels", "no");
-            return rows.map(function (s) {
-                var text = byName
-                    ? (s.platform || rzHost(s.url))
-                    : (full ? s.url : rzHost(s.url));
-                return [icon(s.icon, "fa-solid fa-link"), text, s.url, s.platform];
+            rows = rcap(rows, 'socialsCount');
+
+            const useLabels = ron('socialLabels', 'no');
+            return rows.map(s => {
+                const text = useLabels
+                    ? (s.platform || extractHost(s.url))
+                    : (fullUrls ? s.url : extractHost(s.url));
+                return [icon(s.icon, 'fa-solid fa-link'), text, s.url, s.platform];
             });
         }
     };
 
-    var order = rlist("contactOrder");
-    if (!order.length) order = ["location", "email", "phone", "website", "socials"];
+    const order = rlist('contactOrder');
+    const defaultOrder = ['location', 'email', 'phone', 'website', 'socials'];
+    const finalOrder = order.length ? order : defaultOrder;
 
-    var out = [];
-    order.forEach(function (k) {
-        if (build[k]) out = out.concat(build[k]());
+    const result = [];
+    finalOrder.forEach(key => {
+        if (builders[key]) {
+            result.push(...builders[key]());
+        }
     });
 
-    return out;
+    return result;
 }
 
 
-/* ── SUMMARY ─────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   S U M M A R Y   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   A heading is optional: with "Summary Title" filled the paragraph becomes
-   a labelled section like any other; left blank it reads as a lead.
+/**
+ * Render the professional summary
+ * @returns {string}
+ */
+function renderSummary() {
+    if (!ron('showSummary', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const text = rcfg('summary', cfg('aboutBody', ''));
+    if (!text) return '';
 
-function rzSummaryBlock() {
-    if (!ron("showSummary", "yes")) return "";
-
-    var txt = rcfg("summary", cfg("aboutBody", ""));
-    if (!txt) return "";
-
-    var body = '<p class="rz-lead">' + markup(txt) + '</p>';
-    var title = rcfg("summaryTitle", "");
+    const body = `<p class="rz-lead">${markup(text)}</p>`;
+    const title = rcfg('summaryTitle', '');
 
     return title
-        ? rzSec("summary", title, body)
-        : '<div class="rz-block rz-leadwrap">' + body + '</div>';
+        ? section('summary', title, body)
+        : `<div class="rz-block rz-leadwrap">${body}</div>`;
 }
 
 
-/* ── STATS FIGURES ──────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   S T A T S   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   📊 Stats, printed as static figures — the animated counters used on the
-   home page would land on a half-counted number inside a PDF.
+/**
+ * Render statistics as static figures
+ * @returns {string}
+ */
+function renderStats() {
+    if (!ron('showStats', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    let stats = STATS.filter(s => on2(s.show) && s.value);
 
-function rzStatsBlock() {
-    if (!ron("showStats", "yes")) return "";
+    // Apply count limit from sheet or default to 4
+    stats = String(rcfg('statsCount', '')).trim()
+        ? rcap(stats, 'statsCount')
+        : stats.slice(0, 4);
 
-    var list = STATS.filter(function (s) { return on2(s.show) && s.value; });
-    list = String(rcfg("statsCount", "")).trim()
-        ? rcap(list, "statsCount")
-        : list.slice(0, 4);
+    if (!stats.length) return '';
 
-    if (!list.length) return "";
+    const showLabels = ron('showStatLabels', 'yes');
+    const body = `
+        <div class="rz-figs">
+            ${stats.map(s => `
+                <span class="rz-fig">
+                    <b>${esc(s.value)}</b>
+                    ${showLabels && s.label ? `<span>${esc(s.label)}</span>` : ''}
+                </span>
+            `).join('')}
+        </div>
+    `;
 
-    var labels = ron("showStatLabels", "yes");
-    var body = '<div class="rz-figs">' +
-        list.map(function (s) {
-            return '<span class="rz-fig">' +
-                '<b>' + esc(s.value) + '</b>' +
-                (labels && s.label ? '<span>' + esc(s.label) + '</span>' : '') +
-                '</span>';
-        }).join("") +
-        '</div>';
-
-    var title = rcfg("statsTitle", "");
+    const title = rcfg('statsTitle', '');
     return title
-        ? rzSec("stats", title, body)
-        : '<div class="rz-block rz-figrow">' + body + '</div>';
+        ? section('stats', title, body)
+        : `<div class="rz-block rz-figrow">${body}</div>`;
 }
 
 
-/* ── DATE UTILITIES ──────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   D A T E   U T I L I T I E S
+   ───────────────────────────────────────────────────────────────────── */
 
-   The sheet writes dates however it likes — "2019", "Mar 2023", "Present".
-   Both forms are parsed so a tenure can sit beside the range; anything
-   unparseable shows no tenure rather than a wrong one.
+const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
-   ──────────────────────────────────────────────────────────────────── */
+/**
+ * Parse a date string into a structured object
+ * @param {string} value - Date string like "2019", "Mar 2023", "Present"
+ * @returns {Object|null} { y, m, coarse } or null
+ */
+function parseDate(value) {
+    const str = String(value || '').trim();
+    if (!str) return null;
 
-var RZ_MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const now = new Date();
 
-
-function rzDate(v) {
-    var s = String(v || "").trim();
-    if (!s) return null;
-
-    var now = new Date();
-    if (/^(present|current|now|ongoing|to date)$/i.test(s)) {
-        return { y: now.getFullYear(), m: now.getMonth(), coarse: false };
+    // Handle "Present" and similar
+    if (/^(present|current|now|ongoing|to date)$/i.test(str)) {
+        return { year: now.getFullYear(), month: now.getMonth(), coarse: false };
     }
 
-    var md = s.match(/^([A-Za-z]{3,})\.?\s+(\d{4})$/);
-    if (md) {
-        var mi = RZ_MONTHS.indexOf(md[1].slice(0, 3).toLowerCase());
-        if (mi > -1) {
-            return { y: parseInt(md[2], 10), m: mi, coarse: false };
+    // Handle "Mar 2023"
+    const monthMatch = str.match(/^([A-Za-z]{3,})\.?\s+(\d{4})$/);
+    if (monthMatch) {
+        const monthIndex = MONTH_NAMES.indexOf(monthMatch[1].slice(0, 3).toLowerCase());
+        if (monthIndex > -1) {
+            return { year: parseInt(monthMatch[2], 10), month: monthIndex, coarse: false };
         }
     }
 
-    var yd = s.match(/^(\d{4})$/);
-    if (yd) {
-        return { y: parseInt(yd[1], 10), m: 0, coarse: true };
+    // Handle "2023"
+    const yearMatch = str.match(/^(\d{4})$/);
+    if (yearMatch) {
+        return { year: parseInt(yearMatch[1], 10), month: 0, coarse: true };
     }
 
     return null;
 }
 
+/**
+ * Calculate the duration between two dates
+ * @param {string} start - Start date string
+ * @param {string} end - End date string
+ * @returns {string} Human-readable duration
+ */
+function calculateDuration(start, end) {
+    const a = parseDate(start);
+    const b = parseDate(end);
+    if (!a || !b) return '';
 
-function rzSpan(start, end) {
-    var a = rzDate(start), b = rzDate(end);
-    if (!a || !b) return "";
-
-    // A year-only start can't honestly claim months: "2026 – Present" would
-    // otherwise read "8 mos" purely because January was assumed.
+    // Year-only dates can't accurately calculate months
     if (a.coarse) {
-        var yrs = b.y - a.y;
-        return yrs >= 1 ? yrs + " yr" + (yrs > 1 ? "s" : "") : "";
+        const years = b.year - a.year;
+        return years >= 1 ? `${years} yr${years > 1 ? 's' : ''}` : '';
     }
 
-    var months = (b.y - a.y) * 12 + (b.m - a.m) + 1;
-    if (months < 1) return "";
+    const months = (b.year - a.year) * 12 + (b.month - a.month) + 1;
+    if (months < 1) return '';
 
-    var y = Math.floor(months / 12);
-    var m = months % 12;
-    var out = [];
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    const parts = [];
 
-    if (y) out.push(y + " yr" + (y > 1 ? "s" : ""));
-    if (m) out.push(m + " mo" + (m > 1 ? "s" : ""));
+    if (years) parts.push(`${years} yr${years > 1 ? 's' : ''}`);
+    if (remainingMonths) parts.push(`${remainingMonths} mo${remainingMonths > 1 ? 's' : ''}`);
 
-    return out.join(" ");
+    return parts.join(' ');
 }
 
 
-/* ── WORK HISTORY GROUPING ──────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   E X P E R I E N C E   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   🗓 Experience split on its Type column: work-like rows become the
-   Experience block, education-like rows are peeled off for the Education
-   block, and anything else keeps its own label and gets its own block.
+/**
+ * Group experience items by type
+ * @returns {Array} Grouped experience items
+ */
+function buildExperienceGroups() {
+    const groups = {};
+    const order = [];
 
-   ──────────────────────────────────────────────────────────────────── */
+    EXP.filter(e => on2(e.show)).forEach(entry => {
+        const rawType = String(entry.type || '').trim();
+        const typeKey = rawType.toLowerCase();
 
-function rzGroups() {
-    var order = [], byKey = {};
+        // Determine the group key
+        let key;
+        if (!rawType || /^(work|job|employment|experience|career|freelance)/.test(typeKey)) {
+            key = '__work';
+        } else if (/^(edu|study|academic|school|degree)/.test(typeKey)) {
+            key = '__edu';
+        } else {
+            key = slugify(rawType) || '__work';
+        }
 
-    EXP.filter(function (e) { return on2(e.show); }).forEach(function (e) {
-        var raw = String(e.type || "").trim();
-        var k = raw.toLowerCase();
-
-        var key = (!raw || /^(work|job|employment|experience|career|freelance)/.test(k))
-            ? "__work"
-            : /^(edu|study|academic|school|degree)/.test(k)
-                ? "__edu"
-                : (slugify(raw) || "__work");
-
-        if (!byKey[key]) {
-            byKey[key] = { key: key, label: raw, items: [] };
+        if (!groups[key]) {
+            groups[key] = { key, label: rawType, items: [] };
             order.push(key);
         }
-        byKey[key].items.push(e);
+        groups[key].items.push(entry);
     });
 
-    return order.map(function (k) { return byKey[k]; });
+    return order.map(key => groups[key]);
+}
+
+/**
+ * Find a group by its key
+ * @param {string} key - Group identifier
+ * @returns {Object|null}
+ */
+function findGroup(key) {
+    const groups = buildExperienceGroups();
+    return groups.find(g => g.key === key) || null;
+}
+
+/**
+ * Render the main experience block
+ * @returns {string}
+ */
+function renderExperienceBlock() {
+    if (!ron('showExperience', 'yes')) return '';
+    const group = findGroup('__work');
+    return group ? renderHistoryBlock(group) : '';
+}
+
+/**
+ * Render a history block (work, volunteer, or custom)
+ * @param {Object} group - The group object
+ * @returns {string}
+ */
+function renderHistoryBlock(group) {
+    const isWork = group.key === '__work';
+    const title = isWork
+        ? rcfg('experienceTitle', 'Experience')
+        : (group.label || 'Experience');
+
+    const items = rcap(group.items, isWork ? 'experienceCount' : '');
+    if (!items.length) return '';
+
+    const key = isWork ? 'experience' : group.key;
+    const body = `<div class="rz-entries">${items.map(renderExperienceEntry).join('')}</div>`;
+
+    return section(key, title, body);
+}
+
+/**
+ * Render a single experience entry
+ * @param {Object} entry - Experience entry data
+ * @returns {string}
+ */
+function renderExperienceEntry(entry) {
+    const showRole = ron('showExperienceRole', 'yes');
+    const showDates = ron('showExperienceDates', 'yes');
+    const showTenure = ron('showExperienceTenure', 'yes');
+    const showLocation = ron('showExperienceLocation', 'yes');
+    const showMeta = ron('showExperienceMeta', 'yes');
+    const showDescription = ron('showExperienceDescription', 'yes');
+    const showTags = ron('showExperienceTags', 'yes');
+
+    // Organisation name (falls back to title if org is blank)
+    const org = entry.org || entry.title;
+    const role = (entry.org && showRole) ? entry.title : '';
+
+    // Date and location
+    const dateRange = showDates
+        ? [entry.start, entry.end].filter(Boolean).join(' – ')
+        : '';
+    const tenure = showTenure ? calculateDuration(entry.start, entry.end) : '';
+    const location = showLocation ? (entry.location || '') : '';
+    const subInfo = [tenure, location].filter(Boolean).join(' · ');
+
+    // Tags
+    let tags = showTags ? rcap(listOf(entry.tags), 'experienceTagsCount') : [];
+    const tagLabel = ron('showExperienceTagsLabel', 'yes')
+        ? rcfg('experienceTagsLabel', 'Stack')
+        : '';
+
+    return `
+        <article class="rz-entry">
+            <div class="rz-entry-top">
+                <div class="rz-entry-id">
+                    <h3>${esc(org)}</h3>
+                    ${role ? `<p class="rz-role">${esc(role)}</p>` : ''}
+                </div>
+                ${(dateRange || subInfo) ? `
+                    <div class="rz-entry-when">
+                        ${dateRange ? `<span class="rz-dates">${esc(dateRange)}</span>` : ''}
+                        ${subInfo ? `<span class="rz-sub">${esc(subInfo)}</span>` : ''}
+                    </div>
+                ` : ''}
+            </div>
+
+            ${showMeta && entry.meta ? `<p class="rz-meta">${esc(entry.meta)}</p>` : ''}
+            ${showDescription ? renderBullets(entry.description, rcfg('experienceBullets', '')) : ''}
+
+            ${tags.length ? `
+                <div class="rz-tagrow">
+                    ${tagLabel ? `<span class="rz-taglabel">${esc(tagLabel)}</span>` : ''}
+                    ${tags.map(t => `<span class="rz-tag">${esc(t)}</span>`).join('')}
+                </div>
+            ` : ''}
+        </article>
+    `;
 }
 
 
-function rzFindGroup(key) {
-    var found = null;
-    rzGroups().forEach(function (g) {
-        if (g.key === key) found = g;
-    });
-    return found;
-}
+/* ─────────────────────────────────────────────────────────────────────
+   B U L L E T   R E N D E R E R
+   ───────────────────────────────────────────────────────────────────── */
 
+/**
+ * Render description text as bullets or paragraph
+ * @param {string} text - Description text
+ * @param {string} limit - Maximum number of bullets
+ * @returns {string}
+ */
+function renderBullets(text, limit) {
+    const linesList = lines(text);
+    if (!linesList.length) return '';
 
-/* ── EXPERIENCE BLOCK ──────────────────────────────────────────────
+    // Apply bullet limit
+    const maxBullets = parseInt(String(limit).replace(/[^0-9]/g, ''), 10);
+    const finalLines = !isNaN(maxBullets) ? linesList.slice(0, maxBullets) : linesList;
+    if (!finalLines.length) return '';
 
-   Renders the main work experience section.
-
-   ──────────────────────────────────────────────────────────────────── */
-
-function rzExperienceBlock() {
-    if (!ron("showExperience", "yes")) return "";
-    var g = rzFindGroup("__work");
-    return g ? rzHistoryBlock(g) : "";
-}
-
-
-function rzHistoryBlock(g) {
-    var work = g.key === "__work";
-    var title = work
-        ? rcfg("experienceTitle", "Experience")
-        : (g.label || "Experience");
-
-    var items = rcap(g.items, work ? "experienceCount" : "");
-    if (!items.length) return "";
-
-    return rzSec(
-        work ? "experience" : g.key,
-        title,
-        '<div class="rz-entries">' + items.map(rzJob).join("") + '</div>'
-    );
-}
-
-
-function rzJob(e) {
-    var showRole = ron("showExperienceRole", "yes");
-    var showDates = ron("showExperienceDates", "yes");
-    var showTenure = ron("showExperienceTenure", "yes");
-    var showPlace = ron("showExperienceLocation", "yes");
-    var showMeta = ron("showExperienceMeta", "yes");
-    var showDesc = ron("showExperienceDescription", "yes");
-    var showTags = ron("showExperienceTags", "yes");
-
-    // The organisation reads as the entry's name; the role sits under it.
-    // A row with no Organization falls back to its Title so nothing is lost.
-    var org = e.org || e.title;
-    var role = (e.org && showRole) ? e.title : "";
-
-    var when = showDates ? [e.start, e.end].filter(Boolean).join(" – ") : "";
-    var sub = [
-        showTenure ? rzSpan(e.start, e.end) : "",
-        showPlace ? (e.location || "") : ""
-    ].filter(Boolean).join(" · ");
-
-    var tags = showTags ? rcap(listOf(e.tags), "experienceTagsCount") : [];
-
-    // Blanking a cell means "fall back" everywhere else, so dropping the
-    // little "Stack" caption needs a switch of its own rather than an
-    // empty label cell.
-    var tagLabel = ron("showExperienceTagsLabel", "yes")
-        ? rcfg("experienceTagsLabel", "Stack")
-        : "";
-
-    return '<article class="rz-entry">' +
-        '<div class="rz-entry-top">' +
-        '<div class="rz-entry-id">' +
-        '<h3>' + esc(org) + '</h3>' +
-        (role ? '<p class="rz-role">' + esc(role) + '</p>' : '') +
-        '</div>' +
-        ((when || sub) ? '<div class="rz-entry-when">' +
-            (when ? '<span class="rz-dates">' + esc(when) + '</span>' : '') +
-            (sub ? '<span class="rz-sub">' + esc(sub) + '</span>' : '') +
-            '</div>' : '') +
-        '</div>' +
-        (showMeta && e.meta ? '<p class="rz-meta">' + esc(e.meta) + '</p>' : '') +
-        (showDesc ? rzBullets(e.description, rcfg("experienceBullets", "")) : "") +
-        (tags.length ? '<div class="rz-tagrow">' +
-            (tagLabel ? '<span class="rz-taglabel">' + esc(tagLabel) + '</span>' : '') +
-            tags.map(function (t) { return '<span class="rz-tag">' + esc(t) + '</span>'; }).join("") +
-            '</div>' : '') +
-        '</article>';
-}
-
-
-/* A description holding several lines reads as bullets; a single line stays
-   a paragraph rather than a lone stranded bullet. "Experience Bullets" caps
-   how many survive, which is the quickest lever for a one-page résumé. */
-function rzBullets(text, limit) {
-    var ls = lines(text);
-    if (!ls.length) return "";
-
-    var n = parseInt(String(limit).replace(/[^0-9]/g, ""), 10);
-    if (!isNaN(n)) ls = ls.slice(0, n);
-    if (!ls.length) return "";
-
-    if (ls.length === 1 && !/^[-•·*]\s/.test(ls[0])) {
-        return '<p class="rz-p">' + esc(ls[0]) + '</p>';
+    // Single line without bullet marker → paragraph
+    if (finalLines.length === 1 && !/^[-•·*]\s/.test(finalLines[0])) {
+        return `<p class="rz-p">${esc(finalLines[0])}</p>`;
     }
 
-    return '<ul class="rz-ul">' +
-        ls.map(function (l) {
-            return '<li>' + esc(l.replace(/^[-•·*]\s*/, "")) + '</li>';
-        }).join("") +
-        '</ul>';
+    // Multiple lines → bullet list
+    return `
+        <ul class="rz-ul">
+            ${finalLines.map(line => `<li>${esc(line.replace(/^[-•·*]\s*/, ''))}</li>`).join('')}
+        </ul>
+    `;
 }
 
 
-/* ── PROJECTS BLOCK ──────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   P R O J E C T S   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   Selected projects from the 🚀 Projects sheet.
+/**
+ * Render the projects block
+ * @returns {string}
+ */
+function renderProjectsBlock() {
+    if (!ron('showProjects', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    let projects = PROJECTS.filter(p => on2(p.show) && p.title);
+    if (!projects.length) return '';
 
-function rzProjectsBlock() {
-    if (!ron("showProjects", "yes")) return "";
-
-    var all = PROJECTS.filter(function (p) { return on2(p.show) && p.title; });
-    if (!all.length) return "";
-
-    var list;
-
-    if (ron("projectsFeaturedOnly", "no")) {
-        list = all.filter(isFeatured);
-    } else if (ron("projectsFeaturedFirst", "yes")) {
-        list = all.filter(isFeatured)
-            .concat(all.filter(function (p) { return !isFeatured(p); }));
-    } else {
-        list = all;
+    // Apply featured filtering
+    if (ron('projectsFeaturedOnly', 'no')) {
+        projects = projects.filter(isFeatured);
+    } else if (ron('projectsFeaturedFirst', 'yes')) {
+        const featured = projects.filter(isFeatured);
+        const rest = projects.filter(p => !isFeatured(p));
+        projects = featured.concat(rest);
     }
 
-    list = String(rcfg("projectsCount", "")).trim()
-        ? rcap(list, "projectsCount")
-        : list.slice(0, 4);
+    // Apply count limit
+    projects = String(rcfg('projectsCount', '')).trim()
+        ? rcap(projects, 'projectsCount')
+        : projects.slice(0, 4);
 
-    if (!list.length) return "";
+    if (!projects.length) return '';
 
-    var showMeta = ron("showProjectMeta", "yes");
-    var showTags = ron("showProjectTags", "yes");
-    var showSummary = ron("showProjectSummary", "yes");
-    var showLink = ron("showProjectLink", "no");
+    const showMeta = ron('showProjectMeta', 'yes');
+    const showTags = ron('showProjectTags', 'yes');
+    const showSummary = ron('showProjectSummary', 'yes');
+    const showLink = ron('showProjectLink', 'no');
 
-    return rzSec("projects", rcfg("projectsTitle", "Selected Projects"),
-        '<div class="rz-entries">' +
-        list.map(function (p) {
-            var tags = showTags ? rcap(listOf(p.tags), "projectTagsCount") : [];
-            if (showTags && !String(rcfg("projectTagsCount", "")).trim()) {
-                tags = tags.slice(0, 6);
-            }
+    const body = `
+        <div class="rz-entries">
+            ${projects.map(project => {
+                let tags = showTags ? rcap(listOf(project.tags), 'projectTagsCount') : [];
+                if (showTags && !String(rcfg('projectTagsCount', '')).trim()) {
+                    tags = tags.slice(0, 6);
+                }
 
-            var meta = showMeta ? [p.client, p.year].filter(Boolean).join(" · ") : "";
-            var link = showLink ? (p.liveUrl || p.repoUrl || "") : "";
+                const meta = showMeta
+                    ? [project.client, project.year].filter(Boolean).join(' · ')
+                    : '';
+                const link = showLink ? (project.liveUrl || project.repoUrl || '') : '';
 
-            return '<article class="rz-entry rz-project">' +
-                '<div class="rz-entry-top">' +
-                '<div class="rz-entry-id">' +
-                '<h3>' + esc(p.title) + '</h3>' +
-                (tags.length ? '<p class="rz-stackline">' + esc(tags.join(" · ")) + '</p>' : '') +
-                '</div>' +
-                (meta ? '<div class="rz-entry-when"><span class="rz-dates">' + esc(meta) + '</span></div>' : '') +
-                '</div>' +
-                (showSummary && p.summary ? '<p class="rz-p">' + esc(p.summary) + '</p>' : '') +
-                (link ? '<p class="rz-link"><a href="' + esc(link) + '" target="_blank" rel="noopener">' +
-                    esc(rzHost(link)) + '</a></p>' : '') +
-                '</article>';
-        }).join("") +
-        '</div>'
-    );
+                return `
+                    <article class="rz-entry rz-project">
+                        <div class="rz-entry-top">
+                            <div class="rz-entry-id">
+                                <h3>${esc(project.title)}</h3>
+                                ${tags.length ? `<p class="rz-stackline">${esc(tags.join(' · '))}</p>` : ''}
+                            </div>
+                            ${meta ? `<div class="rz-entry-when"><span class="rz-dates">${esc(meta)}</span></div>` : ''}
+                        </div>
+                        ${showSummary && project.summary ? `<p class="rz-p">${esc(project.summary)}</p>` : ''}
+                        ${link ? `<p class="rz-link"><a href="${esc(link)}" target="_blank" rel="noopener">${esc(extractHost(link))}</a></p>` : ''}
+                    </article>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    return section('projects', rcfg('projectsTitle', 'Selected Projects'), body);
 }
 
 
-/* ── SKILLS BLOCK ────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   S K I L L S   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   🧠 Skills categories become labelled rows; 🧰 Tools joins them as a final
-   row so the whole stack reads in one block. "Skills Style" swaps the chips
-   for a plain comma list, which is denser and prints smaller.
+/**
+ * Render the skills and tools block
+ * @returns {string}
+ */
+function renderSkillsBlock() {
+    if (!ron('showSkills', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    let rows = SKILLS
+        .filter(s => on2(s.show) && s.category)
+        .map(s => ({ label: s.category, items: listOf(s.items) }));
+    rows = rcap(rows, 'skillsCount');
 
-function rzSkillsBlock() {
-    if (!ron("showSkills", "yes")) return "";
-
-    var rows = SKILLS.filter(function (s) { return on2(s.show) && s.category; })
-        .map(function (s) { return { label: s.category, items: listOf(s.items) }; });
-    rows = rcap(rows, "skillsCount");
-
-    if (ron("showTools", "yes")) {
-        var tools = rcap(
-            TOOLS.filter(function (t) { return on2(t.show) && t.name; })
-                .map(function (t) { return t.name; }),
-            "toolsCount"
+    // Add tools as a separate row
+    if (ron('showTools', 'yes')) {
+        const tools = rcap(
+            TOOLS.filter(t => on2(t.show) && t.name).map(t => t.name),
+            'toolsCount'
         );
         if (tools.length) {
-            rows.push({ label: rcfg("toolsLabel", "Tools & Platforms"), items: tools });
+            rows.push({ label: rcfg('toolsLabel', 'Tools & Platforms'), items: tools });
         }
     }
 
-    rows = rows.filter(function (r) { return r.items.length; });
-    if (!rows.length) return "";
+    rows = rows.filter(r => r.items.length);
+    if (!rows.length) return '';
 
-    var plain = ropt("skillsStyle", "tags") === "text";
-    var showLabels = ron("showSkillLabels", "yes");
+    const plainStyle = ropt('skillsStyle', 'tags') === 'text';
+    const showLabels = ron('showSkillLabels', 'yes');
 
-    return rzSec("skills", rcfg("skillsTitle", "Technical Expertise"),
-        '<div class="rz-skills' + (plain ? ' rz-skills-text' : '') + '">' +
-        rows.map(function (r) {
-            var items = plain
-                ? '<p class="rz-skill-list">' + esc(r.items.join(" · ")) + '</p>'
-                : '<div class="rz-tagrow">' +
-                  r.items.map(function (i) {
-                      return '<span class="rz-tag">' + esc(i) + '</span>';
-                  }).join("") +
-                  '</div>';
+    const body = `
+        <div class="rz-skills${plainStyle ? ' rz-skills-text' : ''}">
+            ${rows.map(row => {
+                const items = plainStyle
+                    ? `<p class="rz-skill-list">${esc(row.items.join(' · '))}</p>`
+                    : `<div class="rz-tagrow">${row.items.map(i => `<span class="rz-tag">${esc(i)}</span>`).join('')}</div>`;
 
-            return '<div class="rz-skill-row">' +
-                (showLabels ? '<h4>' + esc(r.label) + '</h4>' : '') +
-                items +
-                '</div>';
-        }).join("") +
-        '</div>'
-    );
+                return `
+                    <div class="rz-skill-row">
+                        ${showLabels ? `<h4>${esc(row.label)}</h4>` : ''}
+                        ${items}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    return section('skills', rcfg('skillsTitle', 'Technical Expertise'), body);
 }
 
 
-/* ── EDUCATION BLOCK ─────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   E D U C A T I O N   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   Résumés normally list the degree, not an essay about it, so descriptions
-   are off by default — "Education Detail: Yes" brings them back.
+/**
+ * Render the education block
+ * @returns {string}
+ */
+function renderEducationBlock() {
+    if (!ron('showEducation', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const group = findGroup('__edu');
+    if (!group) return '';
 
-function rzEducationBlock() {
-    if (!ron("showEducation", "yes")) return "";
+    let items = rcap(group.items, 'educationCount');
+    if (!items.length) return '';
 
-    var g = rzFindGroup("__edu");
-    if (!g) return "";
+    const showDetail = ron('educationDetail', 'no');
+    const showOrg = ron('showEducationOrg', 'yes');
+    const showDates = ron('showEducationDates', 'yes');
+    const showLocation = ron('showEducationLocation', 'yes');
+    const showMeta = ron('showEducationMeta', 'yes');
 
-    var items = rcap(g.items, "educationCount");
-    if (!items.length) return "";
+    const body = `
+        <div class="rz-entries rz-edu">
+            ${items.map(entry => {
+                const dateRange = showDates
+                    ? [entry.start, entry.end].filter(Boolean).join(' – ')
+                    : '';
+                const line = [showOrg ? entry.org : '', showLocation ? entry.location : '']
+                    .filter(Boolean).join(' · ');
 
-    var detail = ron("educationDetail", "no");
-    var showOrg = ron("showEducationOrg", "yes");
-    var showDates = ron("showEducationDates", "yes");
-    var showPlace = ron("showEducationLocation", "yes");
-    var showMeta = ron("showEducationMeta", "yes");
+                return `
+                    <article class="rz-entry">
+                        <div class="rz-entry-top">
+                            <div class="rz-entry-id">
+                                <h3>
+                                    ${esc(entry.title)}
+                                    ${showMeta && entry.meta ? `<span class="rz-badge">${esc(entry.meta)}</span>` : ''}
+                                </h3>
+                                ${line ? `<p class="rz-role">${esc(line)}</p>` : ''}
+                            </div>
+                            ${dateRange ? `<div class="rz-entry-when"><span class="rz-dates">${esc(dateRange)}</span></div>` : ''}
+                        </div>
+                        ${showDetail && entry.description ? `<p class="rz-p">${esc(lines(entry.description).join(' '))}</p>` : ''}
+                    </article>
+                `;
+            }).join('')}
+        </div>
+    `;
 
-    return rzSec("education", rcfg("educationTitle", "Education"),
-        '<div class="rz-entries rz-edu">' +
-        items.map(function (e) {
-            var when = showDates ? [e.start, e.end].filter(Boolean).join(" – ") : "";
-            var line = [showOrg ? e.org : "", showPlace ? e.location : ""]
-                .filter(Boolean).join(" · ");
-
-            return '<article class="rz-entry">' +
-                '<div class="rz-entry-top">' +
-                '<div class="rz-entry-id">' +
-                '<h3>' + esc(e.title) +
-                (showMeta && e.meta ? '<span class="rz-badge">' + esc(e.meta) + '</span>' : '') +
-                '</h3>' +
-                (line ? '<p class="rz-role">' + esc(line) + '</p>' : '') +
-                '</div>' +
-                (when ? '<div class="rz-entry-when"><span class="rz-dates">' + esc(when) + '</span></div>' : '') +
-                '</div>' +
-                (detail && e.description ? '<p class="rz-p">' + esc(lines(e.description).join(" ")) + '</p>' : '') +
-                '</article>';
-        }).join("") +
-        '</div>'
-    );
+    return section('education', rcfg('educationTitle', 'Education'), body);
 }
 
 
-/* ── EXTRAS BLOCK ────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   E X T R A S   B L O C K
+   ───────────────────────────────────────────────────────────────────── */
 
-   🏅 Resume Extras: whatever the sheet groups together becomes a block.
-   "Extras Style" picks between one section holding every group as a column
-   ("grouped", the default) and a separate labelled section per group ("sections").
+/**
+ * Render the extras block (awards, certifications, etc.)
+ * @returns {string}
+ */
+function renderExtrasBlock() {
+    if (!ron('showExtras', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const onlyGroups = rlist('extrasGroups');
+    const groups = {};
+    const order = [];
 
-function rzExtrasBlock() {
-    if (!ron("showExtras", "yes")) return "";
+    RXTRA.filter(r => on2(r.show) && r.item).forEach(entry => {
+        const groupName = String(entry.group || 'Highlights').trim();
+        if (onlyGroups.length && !onlyGroups.includes(groupName.toLowerCase())) return;
 
-    var only = rlist("extrasGroups");
-    var order = [], byGroup = {};
-
-    RXTRA.filter(function (r) { return on2(r.show) && r.item; }).forEach(function (r) {
-        var g = String(r.group || "Highlights").trim();
-        if (only.length && only.indexOf(g.toLowerCase()) === -1) return;
-
-        if (!byGroup[g]) {
-            byGroup[g] = [];
-            order.push(g);
+        if (!groups[groupName]) {
+            groups[groupName] = [];
+            order.push(groupName);
         }
-        byGroup[g].push(r);
+        groups[groupName].push(entry);
     });
 
-    order = rcap(order, "extrasCount");
-    if (!order.length) return "";
+    const finalOrder = rcap(order, 'extrasCount');
+    if (!finalOrder.length) return '';
 
-    var showDetail = ron("showExtraDetails", "yes");
+    const showDetail = ron('showExtraDetails', 'yes');
 
-    function list(g) {
-        return '<ul class="rz-ul rz-plain">' +
-            rcap(byGroup[g], "extrasItemsCount").map(function (r) {
-                var label = r.link
-                    ? '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">' + esc(r.item) + '</a>'
-                    : esc(r.item);
+    /**
+     * Render a group's items as a list
+     * @param {string} groupName - Group identifier
+     * @returns {string}
+     */
+    function renderGroupList(groupName) {
+        const items = rcap(groups[groupName], 'extrasItemsCount');
+        return `
+            <ul class="rz-ul rz-plain">
+                ${items.map(entry => {
+                    const label = entry.link
+                        ? `<a href="${esc(entry.link)}" target="_blank" rel="noopener">${esc(entry.item)}</a>`
+                        : esc(entry.item);
 
-                return '<li>' + label +
-                    (showDetail && r.detail ? '<span class="rz-detail">' + esc(r.detail) + '</span>' : '') +
-                    '</li>';
-            }).join("") +
-            '</ul>';
+                    return `
+                        <li>
+                            ${label}
+                            ${showDetail && entry.detail ? `<span class="rz-detail">${esc(entry.detail)}</span>` : ''}
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        `;
     }
 
-    if (ropt("extrasStyle", "grouped") === "sections") {
-        return order.map(function (g) {
-            return rzSec(slugify(g) || "extra", g, list(g));
-        }).join("");
+    // Sections style: each group as its own labelled section
+    if (ropt('extrasStyle', 'grouped') === 'sections') {
+        return finalOrder
+            .map(groupName => section(slugify(groupName) || 'extra', groupName, renderGroupList(groupName)))
+            .join('');
     }
 
-    var cols = rnum("extrasColumns", 2);
-    var body = '<div class="rz-extras" style="--rz-cols:' + (cols > 0 ? cols : 1) + '">' +
-        order.map(function (g) {
-            return '<div class="rz-extra"><h4>' + esc(g) + '</h4>' + list(g) + '</div>';
-        }).join("") +
-        '</div>';
+    // Grouped style: all groups in a grid
+    const columns = rnum('extrasColumns', 2);
+    const body = `
+        <div class="rz-extras" style="--rz-cols:${columns > 0 ? columns : 1}">
+            ${finalOrder.map(groupName => `
+                <div class="rz-extra">
+                    <h4>${esc(groupName)}</h4>
+                    ${renderGroupList(groupName)}
+                </div>
+            `).join('')}
+        </div>
+    `;
 
-    return rzSec("extras", rcfg("extrasTitle", "Additional"), body);
+    return section('extras', rcfg('extrasTitle', 'Additional'), body);
 }
 
 
-/* ── FOOTER ──────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   F O O T E R
+   ───────────────────────────────────────────────────────────────────── */
 
-   The bottom of the résumé with availability, contact link, and updated date.
+/**
+ * Render the footer with availability and update info
+ * @returns {string}
+ */
+function buildFooter() {
+    if (!ron('showFooter', 'yes')) return '';
 
-   ──────────────────────────────────────────────────────────────────── */
+    const note = rcfg('availabilityNote', cfg('availabilityStatus', ''));
+    const email = rcfg('email', cfg('email', ''));
+    const updated = ron('showUpdated', 'yes') ? rcfg('updated', '') : '';
 
-function rzFoot() {
-    if (!ron("showFooter", "yes")) return "";
+    const contactLink = (ron('showContactLink', 'yes') && email)
+        ? `<a href="mailto:${esc(email)}">${esc(rcfg('contactLinkLabel', 'Let\u2019s connect'))}</a>`
+        : '';
 
-    var note = rcfg("availabilityNote", cfg("availabilityStatus", ""));
-    var mail = rcfg("email", cfg("email", ""));
-    var updated = ron("showUpdated", "yes") ? rcfg("updated", "") : "";
-    var link = (ron("showContactLink", "yes") && mail)
-        ? '<a href="mailto:' + esc(mail) + '">' +
-          esc(rcfg("contactLinkLabel", "Let\u2019s connect")) +
-          '</a>'
-        : "";
+    const left = [note ? esc(note) : '', contactLink].filter(Boolean).join(' · ');
+    if (!left && !updated) return '';
 
-    var left = [note ? esc(note) : "", link].filter(Boolean).join(" · ");
-    if (!left && !updated) return "";
-
-    return '<footer class="rz-foot">' +
-        '<span>' + left + '</span>' +
-        (updated ? '<span class="rz-updated">' +
-            esc(rcfg("updatedLabel", "Updated")) + ' ' + esc(updated) +
-            '</span>' : '') +
-        '</footer>';
+    return `
+        <footer class="rz-foot">
+            <span>${left}</span>
+            ${updated ? `<span class="rz-updated">${esc(rcfg('updatedLabel', 'Updated'))} ${esc(updated)}</span>` : ''}
+        </footer>
+    `;
 }
 
 
-/* ── UTILITY FUNCTIONS ──────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
+   U T I L I T Y   F U N C T I O N S
+   ───────────────────────────────────────────────────────────────────── */
 
-   Small helpers used throughout the résumé renderer.
-
-   ──────────────────────────────────────────────────────────────────── */
-
-/* A printed résumé reads better as "github.com/name" than as a full URL. */
-function rzHost(url) {
-    return String(url || "").replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
+/**
+ * Extract hostname from a URL for cleaner display
+ * @param {string} url - Full URL
+ * @returns {string}
+ */
+function extractHost(url) {
+    return String(url || '')
+        .replace(/^https?:\/\/(www\.)?/i, '')
+        .replace(/\/$/, '');
 }
 
-
-/* Breadcrumb navigation helper. */
-function crumbs(items) {
-    return '<nav class="crumbs" aria-label="Breadcrumb">' +
-        items.map(function (it, i) {
-            var sep = i ? '<i class="fa-solid fa-angle-right"></i>' : '';
-            return sep + (it[1]
-                ? '<a href="' + esc(it[1]) + '" data-route>' + esc(it[0]) + '</a>'
-                : '<span aria-current="page">' + esc(it[0]) + '</span>');
-        }).join("") +
-        '</nav>';
+/**
+ * Build breadcrumb navigation
+ * @param {Array} items - [[label, url], ...]
+ * @returns {string}
+ */
+function buildBreadcrumbs(items) {
+    return `
+        <nav class="crumbs" aria-label="Breadcrumb">
+            ${items.map((item, index) => {
+                const separator = index ? '<i class="fa-solid fa-angle-right"></i>' : '';
+                const [label, url] = item;
+                return `
+                    ${separator}
+                    ${url
+                        ? `<a href="${esc(url)}" data-route>${esc(label)}</a>`
+                        : `<span aria-current="page">${esc(label)}</span>`
+                    }
+                `;
+            }).join('')}
+        </nav>
+    `;
 }
 
 /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
