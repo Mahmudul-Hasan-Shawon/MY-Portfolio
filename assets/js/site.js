@@ -63,6 +63,8 @@ window.addEventListener('load', function() {
     }, 10);
 });
 
+
+
 /* ── Tiny helpers ─────────────────────────────────────────────────────── */
 function $(sel, root) { return (root || document).querySelector(sel); }
 function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }

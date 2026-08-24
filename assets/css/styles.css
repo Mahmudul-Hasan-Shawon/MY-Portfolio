@@ -1902,11 +1902,15 @@ h4 {
 
 .marquee {
     margin-top: 2.6rem;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    width: 100vw;
     border-block: 1px solid var(--line-soft);
     padding-block: 1.1rem;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    background: var(--surface);
 }
 
 .marquee-track {
@@ -1929,17 +1933,117 @@ h4 {
 .marquee-item {
     display: flex;
     align-items: center;
-    gap: .6rem;
+    gap: 0.6rem;
     font-family: var(--ff-mono);
-    font-size: .82rem;
-    letter-spacing: .04em;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
     color: var(--faint);
     white-space: nowrap;
-    transition: color .3s;
+    transition: color 0.8s ease;
+    padding: 0 0.5rem;
+    position: relative;
 }
 
-.marquee-item:hover {
-    color: var(--accent);
+.marquee-item i {
+    font-size: 1rem;
+    color: var(--faint);
+    opacity: 0.6;
+    transition: color 0.8s ease, opacity 0.8s ease;
+}
+
+/* When an item is in the center (using CSS animation to detect) */
+.marquee-item:nth-child(4n+1) {
+    animation: glowCenter 4s ease-in-out infinite;
+}
+
+.marquee-item:nth-child(4n+2) {
+    animation: glowCenter 4s ease-in-out 1s infinite;
+}
+
+.marquee-item:nth-child(4n+3) {
+    animation: glowCenter 4s ease-in-out 2s infinite;
+}
+
+.marquee-item:nth-child(4n+4) {
+    animation: glowCenter 4s ease-in-out 3s infinite;
+}
+
+@keyframes glowCenter {
+    0% {
+        color: var(--faint);
+    }
+    20% {
+        color: var(--faint);
+    }
+    40% {
+        color: var(--accent);
+        transform: scale(1.05);
+    }
+    60% {
+        color: var(--accent);
+        transform: scale(1.05);
+    }
+    80% {
+        color: var(--faint);
+        transform: scale(1);
+    }
+    100% {
+        color: var(--faint);
+        transform: scale(1);
+    }
+}
+
+@keyframes glowCenterIcon {
+    0% {
+        color: var(--faint);
+        opacity: 0.6;
+    }
+    20% {
+        color: var(--faint);
+        opacity: 0.6;
+    }
+    40% {
+        color: var(--accent);
+        opacity: 1;
+    }
+    60% {
+        color: var(--accent);
+        opacity: 1;
+    }
+    80% {
+        color: var(--faint);
+        opacity: 0.6;
+    }
+    100% {
+        color: var(--faint);
+        opacity: 0.6;
+    }
+}
+
+.marquee-item i {
+    animation: glowCenterIcon 4s ease-in-out infinite;
+}
+
+.marquee-item:nth-child(4n+2) i {
+    animation-delay: 1s;
+}
+
+.marquee-item:nth-child(4n+3) i {
+    animation-delay: 2s;
+}
+
+.marquee-item:nth-child(4n+4) i {
+    animation-delay: 3s;
+}
+
+/* Alternative: Use CSS custom properties for better control */
+.marquee-item {
+    --glow-delay: 0s;
+    animation: glowCenter 4s ease-in-out var(--glow-delay) infinite;
+}
+
+.marquee-item i {
+    animation: glowCenterIcon 4s ease-in-out var(--glow-delay) infinite;
 }
 
 /* ==========================================================================
