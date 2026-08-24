@@ -44,6 +44,25 @@ var BASE = (function () {
     } catch (e) { return ""; }
 })();
 
+// Check if fonts are loaded
+function checkFonts() {
+    // Use Font Loading API
+    if (document.fonts) {
+        document.fonts.ready.then(function() {
+            document.body.classList.add('fonts-loaded');
+        });
+    }
+}
+
+// Alternative: check after page load
+window.addEventListener('load', function() {
+    // Force a re-render
+    document.body.style.opacity = '0.99';
+    setTimeout(function() {
+        document.body.style.opacity = '1';
+    }, 10);
+});
+
 /* ── Tiny helpers ─────────────────────────────────────────────────────── */
 function $(sel, root) { return (root || document).querySelector(sel); }
 function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
