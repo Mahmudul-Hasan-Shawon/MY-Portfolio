@@ -276,17 +276,6 @@ body.cursor-on .cursor-glow {
     opacity: 1;
 }
 
-#scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 2px;
-    width: 0;
-    z-index: 120;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    transition: width .12s linear;
-}
-
 /* ==========================================================================
    PRELOADER — instrument boot sequence
    The blueprint language of the page, compressed into one screen: a
@@ -3560,6 +3549,39 @@ a.contact-line:hover {
     border-color: var(--accent);
 }
 
+/* ── Scroll-progress ring around the arrow ───────────────── */
+.tt-ring {
+    position: absolute;
+    inset: -1px;               /* covers the button's own 1px border */
+    width: calc(100% + 2px);
+    height: calc(100% + 2px);
+    transform: rotate(-90deg); /* start (and fill) from 12 o'clock */
+    pointer-events: none;
+}
+
+.tt-track,
+.tt-fill {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.tt-track {
+    stroke: var(--line-soft);
+}
+
+.tt-fill {
+    stroke: var(--accent);
+    /* r=19 → circumference ≈ 119.38; onScroll() writes the dash offset */
+    stroke-dasharray: 119.38;
+    stroke-dashoffset: 119.38;
+}
+
+/* On hover the button turns accent, so let the ring borrow its ink */
+#to-top:hover .tt-fill {
+    stroke: currentColor;
+}
+
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
@@ -4694,7 +4716,6 @@ a.rz-c:hover {
     body.on-resume #to-top,
     body.on-resume #drawer,
     body.on-resume .drawer-veil,
-    body.on-resume #scroll-progress,
     body.on-resume .bg-grid,
     body.on-resume .bg-glow,
     body.on-resume .bg-grain,

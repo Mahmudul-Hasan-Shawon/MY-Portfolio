@@ -2890,6 +2890,9 @@ function scrollSpy() {
 }
 
 /* ── Header, progress bar, back-to-top ───────────────────────────────── */
+var TT_C = 2 * Math.PI * 19;            // ring circumference (matches the SVG)
+var ttFill = document.getElementById("tt-fill");
+
 function onScroll() {
     var y = window.scrollY || document.documentElement.scrollTop;
     $("#site-header").classList.toggle("stuck", y > 24);
@@ -2897,7 +2900,10 @@ function onScroll() {
     $("#to-top").hidden = false;
 
     var h = document.documentElement.scrollHeight - window.innerHeight;
-    $("#scroll-progress").style.width = (h > 0 ? (y / h) * 100 : 0) + "%";
+    var p = h > 0 ? y / h : 0;
+
+    /* The page-progress figure drives the ring on the to-top button. */
+    if (ttFill) ttFill.style.strokeDashoffset = (TT_C * (1 - Math.min(1, Math.max(0, p)))).toFixed(2);
 }
 
 /* ── Drawer ──────────────────────────────────────────────────────────── */
