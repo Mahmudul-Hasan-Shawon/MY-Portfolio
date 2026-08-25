@@ -287,6 +287,12 @@ function enterRoute(hash) {
     render();
     initUI();
 
+    /* render() swapped the whole document out from under Lenis. Its cached
+       max-scroll ("limit") still reflects the previous page until a resize,
+       so any scrollTo would clamp mid-page — the "have to click twice" bug.
+       Force a re-measure before anything scrolls. */
+    if (LENIS) LENIS.resize();
+
     if (hash) {
         var el = document.getElementById(hash.replace(/^#/, ""));
         if (el) { jumpTop(); scrollToEl(el); return; }
@@ -425,7 +431,7 @@ var DEMO = {
         projectsBasePath: "/portfolio",
         projectVideoHeading: "Walkthrough",
         smoothScroll: "Yes",
-        smoothScrollDuration: 1.1,
+        smoothScrollDuration: 0.9,
         trustText: "*500+ projects delivered* across Google Workspace, scraping and browser tooling",
         terminalTitle: "~ mhshan --automation",
         terminalLines: "$ init automation engine\n$ modules loaded ......... 8/8\n$ apps script ............ connected\n$ api connections ........ established\n$ status ................. optimising workflows",
@@ -2725,6 +2731,7 @@ function initSmoothScroll(attempt) {
         duration: dur,
         easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
         smoothWheel: true,
+        wheelMultiplier: 1.25, // each wheel notch travels ~25% further — snappier feel
         syncTouch: false,      // leave native momentum alone on touch devices
         touchMultiplier: 1.6,
         prevent: function (node) {
@@ -2760,15 +2767,35 @@ function headerOffset() {
    it correct even if something else moved the page mid-flight. */
 function scrollToEl(target) {
     if (!target) return;
-    var y = Math.max(0, target.getBoundingClientRect().top +
-        (window.scrollY || window.pageYOffset) - headerOffset());
+    var top = function () {
+        return Math.max(0, target.getBoundingClientRect().top +
+            (window.scrollY || window.pageYOffset) - headerOffset());
+    };
 
-    if (LENIS) LENIS.scrollTo(y, { duration: 1.2, force: true });
-    else window.scrollTo({ top: y, behavior: "smooth" });
+    if (LENIS) {
+        // Late layout changes (images landing on a first visit) can leave the
+        // cached limit stale; re-measure so the target isn't clamped.
+        LENIS.resize();
+        var y = top();
+        LENIS.scrollTo(y, {
+            duration: 0.9,   // anchor flights arrive quicker than wheel glides
+            force: true,
+            lock: true,      // a stray wheel tick mid-flight must not abort the trip
+            onComplete: function () {
+                /* Anything that reflowed while we were flying (images finishing
+                   load, an accordion above, …) leaves the section half-off.
+                   Snap the difference immediately instead of easing there. */
+                var now = top();
+                if (Math.abs(now - y) > 2) {
+                    LENIS.scrollTo(now, { immediate: true, force: true });
+                }
+            }
+        });
+    } else window.scrollTo({ top: y, behavior: "smooth" });
 }
 
 function scrollToTop() {
-    if (LENIS) LENIS.scrollTo(0, { duration: 1.2, force: true });
+    if (LENIS) LENIS.scrollTo(0, { duration: 0.9, force: true, lock: true });
     else window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
