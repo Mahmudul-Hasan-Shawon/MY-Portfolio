@@ -267,6 +267,9 @@ body.no-grain .bg-grain {
     transform: translate(-50%, -50%);
     background: radial-gradient(circle, var(--accent-dim), transparent 62%);
     transition: opacity .4s var(--ease);
+    /* Own compositor layer, otherwise the per-frame transform drags the page
+       beneath it (grain blend + cards) into constant repaints. */
+    will-change: transform;
 }
 
 body.cursor-on .cursor-glow {
@@ -2140,8 +2143,12 @@ h4 {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform .7s var(--ease), filter .5s;
+    /* Only the transform is transitioned: animating filter re-rasterises the
+       image every frame and is the main source of hover jank. The grayscale
+       lift still happens, just instantly, hidden inside the zoom. */
+    transition: transform .7s var(--ease);
     filter: grayscale(.25);
+    will-change: transform;
 }
 
 .proj:hover .proj-thumb img {
@@ -2303,6 +2310,24 @@ h4 {
 .proj-play i {
     color: var(--accent);
     font-size: .6rem;
+}
+
+/* ── Card hover cost control ─────────────────────────────── */
+/* backdrop-filter re-blurs its backdrop every frame. On a card the backdrop
+   is the zooming thumbnail, so each blurred pill/badge forces the whole
+   stack to re-composite 60x/s — that is what makes :hover stutter and feel
+   stuck mid-transition. None of these sit over anything they truly need to
+   blur, so swap the blur for slightly more opaque fills (same look). */
+.proj .pill {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.proj-thumb .pill,
+.proj-play {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: color-mix(in srgb, var(--bg) 74%, transparent);
 }
 
 .empty-note {

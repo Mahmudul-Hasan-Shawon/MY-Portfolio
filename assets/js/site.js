@@ -171,7 +171,7 @@ function videoEmbed(url) {
 /* Avatar element that degrades to initials when the URL is missing/broken. */
 function avatar(url, name, cls) {
     if (url) {
-        return '<img src="' + esc(url) + '" alt="' + esc(name) + '" loading="lazy" ' +
+        return '<img src="' + esc(sizedImg(url, 128)) + '" alt="' + esc(name) + '" loading="lazy" ' +
             'onerror="this.outerHTML=\'<span class=&quot;av-fallback ' + (cls || '') + '&quot;>' +
             esc(initials(name)) + '</span>\'">';
     }
@@ -496,7 +496,7 @@ var DEMO = {
         {
             title: "Spreadsheet-powered storefront", slug: "sheet-storefront", category: "E-commerce", featured: true,
             summary: "A full retail site — catalogue, cart, checkout, invoicing and order tracking — running entirely on Google Sheets.",
-            image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=70",
+            image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=65",
             tags: "Apps Script, JavaScript, Sheets API, PDF",
             client: "Retail client", year: "2026", role: "Solo build", duration: "3 weeks",
             liveUrl: "", repoUrl: "",
@@ -506,7 +506,7 @@ var DEMO = {
         {
             title: "Gmail triage & routing engine", slug: "gmail-triage", category: "Utility", featured: true,
             summary: "Parses inbound mail, extracts structured data, labels and routes it, then files attachments in Drive.",
-            image: "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=1200&q=70",
+            image: "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=800&q=65",
             tags: "Apps Script, Gmail API, Drive API, Regex",
             client: "Logistics firm", year: "2025", role: "Automation lead", duration: "2 weeks",
             description: "Overview:\nA four-person ops team was spending most of the morning sorting order confirmations by hand.\n\nSolution:\nA scheduled Apps Script that reads unprocessed threads, pulls fields out with tuned patterns, writes rows to a tracking sheet and moves attachments into dated Drive folders.\n\nFeatures:\nField extraction with per-sender templates\nAuto-labelling and archiving\nAttachment filing by date and client\nDaily digest to the ops channel\n\nResults:\nMorning triage dropped from 3 hours to under 10 minutes\nZero missed confirmations since launch"
@@ -514,7 +514,7 @@ var DEMO = {
         {
             title: "Competitive price monitor", slug: "price-monitor", category: "Finance", featured: false,
             summary: "Scrapes competitor pricing on a schedule, tracks movement and raises alerts when a threshold is crossed.",
-            image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=70",
+            image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=65",
             tags: "Puppeteer, Node.js, Sheets API, Alerts",
             client: "Retail group", year: "2025", role: "Solo build", duration: "10 days",
             description: "Overview:\nPricing decisions were made from a spreadsheet someone updated by hand once a week.\n\nSolution:\nA headless scraper walks a watchlist twice daily, normalises the results and writes a time series that a dashboard reads.\n\nFeatures:\nRetry and backoff on rate limits\nChange detection with configurable thresholds\nEmail and chat alerts\nHistorical price charts\n\nResults:\nPricing reviewed daily instead of weekly\nManual data collection removed entirely"
@@ -522,7 +522,7 @@ var DEMO = {
         {
             title: "Report generator for client billing", slug: "report-generator", category: "Management", featured: false,
             summary: "Builds branded PDF statements from raw ledger rows and emails them on a schedule.",
-            image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=1200&q=70",
+            image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&q=65",
             tags: "Apps Script, HTML Service, PDF, Triggers",
             client: "Agency", year: "2024", role: "Solo build", duration: "1 week",
             description: "Overview:\nMonth-end billing meant copying numbers into a template, exporting and sending each one manually.\n\nSolution:\nA generator that reads the ledger, renders an HTML invoice per client, converts it to PDF and sends it with a personalised note.\n\nFeatures:\nBranded, print-safe invoice layout\nPer-client currency and tax handling\nScheduled monthly run with a dry-run mode\nDelivery log written back to the sheet\n\nResults:\nTwo days of month-end work reduced to one trigger"
@@ -530,7 +530,7 @@ var DEMO = {
         {
             title: "Lead enrichment pipeline", slug: "lead-enrichment", category: "AI/ML", featured: false,
             summary: "Takes a raw lead list, enriches it from public sources and scores each record for fit.",
-            image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=70",
+            image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=65",
             tags: "Node.js, APIs, Scoring, Sheets",
             client: "SaaS startup", year: "2025", role: "Solo build", duration: "2 weeks",
             description: "Overview:\nSales were working a list where half the rows were missing the fields needed to qualify a lead.\n\nSolution:\nA pipeline that fills the gaps from public sources, deduplicates aggressively and applies a weighted fit score the team can tune.\n\nFeatures:\nFuzzy dedupe across company and domain\nConfigurable scoring weights\nConfidence flags on every enriched field\n\nResults:\nQualified-lead volume up without adding headcount"
@@ -538,7 +538,7 @@ var DEMO = {
         {
             title: "Inventory sync across channels", slug: "inventory-sync", category: "E-commerce", featured: false,
             summary: "Keeps stock levels aligned between a warehouse sheet and two sales channels.",
-            image: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=1200&q=70",
+            image: "https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=65",
             tags: "Apps Script, REST, Webhooks",
             client: "Distributor", year: "2024", role: "Solo build", duration: "3 weeks",
             description: "Overview:\nOverselling was a weekly occurrence because three systems each held their own idea of stock.\n\nSolution:\nOne authoritative sheet, webhook listeners on both channels and a reconciliation pass that logs every correction.\n\nFeatures:\nNear-real-time push on stock change\nConflict log with manual override\nNightly full reconciliation\n\nResults:\nOverselling incidents eliminated"
@@ -1328,7 +1328,7 @@ function aboutHTML(n) {
 
     var img = cfg("aboutImageUrl");
     var media = '<figure class="about-media" data-reveal>' +
-        (img ? '<img src="' + esc(img) + '" alt="' + esc(cfg("aboutName")) + '" loading="lazy">'
+        (img ? '<img src="' + esc(sizedImg(img, 900)) + '" alt="' + esc(cfg("aboutName")) + '" loading="lazy" decoding="async">'
             : '<div style="aspect-ratio:4/5;display:grid;place-items:center;font-family:var(--ff-display);font-size:4rem;color:var(--accent)">' +
             esc(initials(cfg("aboutName"))) + '</div>') +
         '<figcaption><span class="rl">' + esc(cfg("aboutRole")) + '</span>' +
@@ -1447,6 +1447,27 @@ function projFiltersHTML() {
     }).join("");
 }
 
+/* Card thumbs render ~310-620px wide and the detail hero ~1100px, but the
+   sheet routinely points at multi-megabyte originals (Pexels hands out
+   6000px+ JPEGs). Decoding those is what froze the page when the grid
+   scrolled into view and on the first card hover. Request a right-sized
+   variant from CDNs that support it; other hosts pass through untouched. */
+function sizedImg(src, w) {
+    if (!src) return src;
+    if (src.indexOf("images.unsplash.com") > -1) {
+        return src.replace(/([?&])w=\d+/, "$1w=" + w).replace(/([?&])q=\d+/, "$1q=" + (w <= 800 ? 65 : 75));
+    }
+    if (src.indexOf("images.pexels.com") > -1) {
+        return src.split("?")[0] + "?auto=compress&cs=tinysrgb&w=" + w;
+    }
+    return src;
+}
+
+/* Cards only ever need the small variant. */
+function thumbSrc(src) {
+    return sizedImg(src, 800);
+}
+
 function projectCards(list) {
     if (!list.length) return '<p class="empty-note">No projects in this category yet.</p>';
 
@@ -1454,7 +1475,7 @@ function projectCards(list) {
         return '<a class="card proj" href="' + esc(urlProject(p.slug)) + '" ' +
             'data-slug="' + esc(p.slug) + '" style="animation-delay:' + (i % 9 * 60) + 'ms">' +
             '<span class="proj-thumb">' +
-            (p.image ? '<img src="' + esc(p.image) + '" alt="' + esc(p.title) + '" loading="lazy">' : '') +
+            (p.image ? '<img src="' + esc(thumbSrc(p.image)) + '" alt="' + esc(p.title) + '" loading="lazy" decoding="async">' : '') +
             '<span class="veil"></span>' +
             (p.category ? '<span class="pill proj-cat">' + esc(p.category) + '</span>' : '') +
             (isFeatured(p) ? '<i class="fa-solid fa-star proj-star" title="Featured"></i>' : '') +
@@ -1528,6 +1549,7 @@ function refreshProjects() {
     var f = $("#proj-filters");
     if (f) f.innerHTML = projFiltersHTML();
     grid.innerHTML = projectCards(scopedProjects());
+    warmThumbs();
 }
 
 /* ── /portfolio/<slug> ────────────────────────────────────────────────── */
@@ -1541,7 +1563,7 @@ function pageProject(p) {
     }).join("");
 
     var gallery = listOf(p.gallery).map(function (g) {
-        return '<img src="' + esc(g) + '" alt="' + esc(p.title) + ' screenshot" loading="lazy">';
+        return '<img src="' + esc(sizedImg(g, 1600)) + '" alt="' + esc(p.title) + ' screenshot" loading="lazy" decoding="async">';
     }).join("");
 
     var video = videoEmbed(p.video);
@@ -1594,7 +1616,7 @@ function pageProject(p) {
         '</header>' +
 
         (p.image ? '<figure class="pp-hero pp-hero-page" data-reveal>' +
-            '<img src="' + esc(p.image) + '" alt="' + esc(p.title) + '"></figure>' : '') +
+            '<img src="' + esc(sizedImg(p.image, 1600)) + '" alt="' + esc(p.title) + '" decoding="async"></figure>' : '') +
 
         '<div class="pp-body">' +
         (facts ? '<div class="pp-facts">' + facts + '</div>' : '') +
@@ -2653,6 +2675,25 @@ function initUI(deferReveal) {
     scrollSpy();
     wireFaq();
     wireForm();
+    warmThumbs();
+}
+
+/* ── Thumbnail warm-up ─────────────────────────────────────────────────
+   A card's first :hover promotes its image to a composited layer at the
+   zoomed scale, and if the bitmap is not decoded yet that decode + GPU
+   upload happens synchronously on the interaction — measured as a ~150ms
+   freeze on hover, and as a stall when several cards scroll into view at
+   once. Decoding them ahead of time (while the browser is idle) moves the
+   cost off the moment the user is actually watching. */
+function warmThumbs() {
+    var idle = window.requestIdleCallback || function (f) { return setTimeout(f, 300); };
+    idle(function () {
+        $$(".proj-thumb img").forEach(function (img) {
+            var go = function () { var p = img.decode && img.decode(); if (p && p.catch) p.catch(function () { }); };
+            if (img.complete) go();
+            else img.addEventListener("load", go, { once: true });
+        });
+    });
 }
 
 /* ── Smooth scrolling (Lenis) ─────────────────────────────── */
