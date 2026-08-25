@@ -1169,14 +1169,15 @@ h4 {
 }
 
 .drawer-brand .brand-mark {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
+    padding: 2px;
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    border: 1px solid var(--accent-line);
-    border-radius: var(--r-sm);
-    background: var(--accent-dim);
+    /* border: 1px solid var(--accent-line); */
+    border-radius: 50px;
+    /* background: var(--accent-dim); */
     color: var(--accent);
     font-family: var(--ff-mono);
     font-size: .68rem;
