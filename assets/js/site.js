@@ -799,7 +799,7 @@ function preDone(after) {
 function applyMeta() {
     var title = cfg("siteTitle", "Portfolio");
     var desc = cfg("metaDescription");
-    var image = cfg("ogImageUrl");
+    var image = cfg("ogImageUrl", "https://shawon7.pages.dev/assets/images/shan_2.jpg");
     var url = cfg("siteUrl");
 
     // Each page announces itself properly, so a shared project link shows the
