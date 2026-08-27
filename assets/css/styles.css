@@ -2521,7 +2521,7 @@ h4 {
     gap: .22em;
     align-items: center;
     font-size: .78rem;
-    color: #f5b83d;
+    color:var(--accent);
     text-shadow: 0 0 24px rgba(245, 184, 61, .35);
 }
 
