@@ -2315,7 +2315,7 @@ h4 {
 
 .proj-thumb .pill,
 .proj-play {
-    backdrop-filter: none;
+    backdrop-filter:blur(6px);
     -webkit-backdrop-filter: none;
     background: color-mix(in srgb, var(--bg) 74%, transparent);
 }
