@@ -2547,22 +2547,35 @@ h4 {
 .tst-scroll-container::after {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 180px;
-    /* ⬅️ Wider fade for full width */
+    top: -6px;
+    bottom: -6px;
+    width: clamp(140px, 22vw, 380px);
+    /* wide, eased-edge fade so cards melt out on both sides */
     z-index: 2;
     pointer-events: none;
+    transform: translateZ(0);
 }
 
 .tst-scroll-container::before {
     left: 0;
-    background: linear-gradient(to right, var(--bg), var(--bg-0));
+    background: linear-gradient(
+        to right,
+        var(--bg) 0%,
+        var(--bg) 18%,
+        var(--bg-0) 62%,
+        transparent 100%
+    );
 }
 
 .tst-scroll-container::after {
     right: 0;
-    background: linear-gradient(to left, var(--bg), var(--bg-0));
+    background: linear-gradient(
+        to left,
+        var(--bg) 0%,
+        var(--bg) 18%,
+        var(--bg-0) 62%,
+        transparent 100%
+    );
 }
 
 @keyframes tstScroll {
@@ -2705,7 +2718,7 @@ h4 {
 @media (max-width: 1024px) {
     .tst-scroll-container::before,
     .tst-scroll-container::after {
-        width: 120px;
+        width: clamp(120px, 20vw, 240px);
     }
 }
 
@@ -2818,7 +2831,7 @@ h4 {
 
     .tst-scroll-container::before,
     .tst-scroll-container::after {
-        width: 50px;
+        width: 26vw;
     }
 
     @keyframes tstScroll {
