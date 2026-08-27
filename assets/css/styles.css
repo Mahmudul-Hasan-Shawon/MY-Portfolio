@@ -231,13 +231,7 @@ textarea {
 }
 
 .bg-grid {
-    background-image:
-        linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
-    background-size: 76px 76px;
-    mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 78%);
-    -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 78%);
-    opacity: .8;
+    display: none;
 }
 
 .bg-glow {
@@ -910,8 +904,14 @@ h4 {
     inset: 0 0 auto;
     z-index: 100;
     padding-block: .9rem;
-    transition: background .4s var(--ease), border-color .4s, padding .4s;
+    transition: background .4s var(--ease), border-color .4s, padding .4s, transform .5s var(--ease);
     border-bottom: 1px solid transparent;
+}
+
+/* hide-on-scroll-down: slide the whole bar up out of view (kept in flow for
+   the nav) and bring it back on scroll-up */
+#site-header.hide {
+    transform: translateY(-100%);
 }
 
 #site-header.stuck {
@@ -2477,9 +2477,9 @@ h4 {
 
 .tst {
     padding: 1.6rem 1.5rem;
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 1.1rem;
-    align-content: start;
     position: relative;
     transition: box-shadow 0.5s ease, transform 0.5s ease;
     background: var(--surface);
@@ -2574,30 +2574,35 @@ h4 {
     }
 }
 
-/* ── Quote mark ───────────────────────────────────────────── */
+/* ── Testimonial stars (top-left) ─────────────────────────── */
 
-.tst .quote-mark {
-    font-family: var(--ff-display);
-    font-size: 3.6rem;
-    line-height: 0.6;
-    color: var(--accent);
-    opacity: 0.3;
-    text-shadow: 0 4px 30px var(--accent-dim);
-    transition: opacity 0.4s ease, text-shadow 0.4s ease;
+.tst > .stars {
+    margin: 0 0 .85rem;
+    display: inline-flex;
+    gap: .22em;
+    align-items: center;
+    font-size: .78rem;
+    color: #f5b83d;
+    text-shadow: 0 0 24px rgba(245, 184, 61, .35);
 }
 
-.tst:hover .quote-mark {
-    opacity: 0.5;
-    text-shadow: 0 8px 50px color-mix(in srgb, var(--accent) 20%, transparent);
+.tst > .stars .fa-regular {
+    color: var(--line-strong);
+    opacity: .6;
+    text-shadow: none;
 }
 
 /* ── Testimonial text ────────────────────────────────────── */
 
 .tst blockquote {
-    font-size: 0.93rem;
+    font-size: 0.94rem;
     color: var(--text);
-    font-weight: 300;
-    line-height: 1.7;
+    font-weight: 340;
+    line-height: 1.75;
+    margin: 0;
+    padding-left: 1.05rem;
+    border-left: 2px solid var(--accent-line);
+    min-height: 5.5em;
 }
 
 /* ── Author info ─────────────────────────────────────────── */
@@ -2605,52 +2610,60 @@ h4 {
 .tst-foot {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    padding-top: 1rem;
+    gap: 0.85rem;
+    margin-top: .35rem;
+    padding-top: 1.1rem;
     border-top: 1px solid var(--line-soft);
 }
 
 .tst-foot img,
 .tst-foot .av-fallback {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     object-fit: cover;
     background: var(--surface-2);
     display: grid;
     place-items: center;
     font-family: var(--ff-mono);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
     color: var(--accent);
-    border: 1px solid var(--line);
     flex-shrink: 0;
 }
 
 .tst-who {
     display: grid;
-    line-height: 1.35;
+    line-height: 1.4;
+    gap: .1rem;
+    min-width: 0;
 }
 
 .tst-who b {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--text);
 }
 
 .tst-who .role-part {
-    font-size: 0.75rem;
-    color: var(--faint);
+    font-size: 0.76rem;
+    color: var(--muted);
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tst-who .role-country {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--faint);
     display: block;
 }
 
 /* ── Stars ────────────────────────────────────────────────── */
 
+/* Inside a testimonial the stars sit at the top-left of the card, not the
+   bottom-right; other uses (.proj-star etc.) keep their default layout. */
 .stars {
     margin-left: auto;
     color: var(--accent);
@@ -2715,19 +2728,36 @@ h4 {
 }
 
 @media (max-width: 620px) {
+    /* make the testimonial card compact so stars → text → author sit snugly */
+    .tst {
+        padding: 1.15rem 1.1rem;
+        gap: .8rem;
+    }
+
+    .tst > .stars {
+        margin-bottom: .6rem;
+    }
+
+    .tst blockquote {
+        font-size: .9rem;
+        line-height: 1.6;
+        min-height: 0;
+        padding-left: .95rem;
+    }
+
     .tst-foot {
         display: grid;
         grid-template-columns: auto 1fr;
-        gap: 0.3rem 0.8rem;
-        align-items: start;
-        padding-top: 1rem;
+        gap: 0.15rem 0.8rem;
+        align-items: center;
+        padding-top: .85rem;
         border-top: 1px solid var(--line-soft);
     }
 
     .tst-foot img,
     .tst-foot .av-fallback {
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
         font-size: 0.8rem;
         grid-row: 1 / 4;
         grid-column: 1;
@@ -2739,24 +2769,24 @@ h4 {
         grid-column: 2;
         grid-row: 1;
         display: grid;
-        gap: 0.05rem;
+        gap: 0.1rem;
         padding-top: 0.1rem;
     }
 
     .tst-who b {
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         font-weight: 600;
         display: block;
     }
 
     .tst-who .role-part {
-        font-size: 0.8rem;
+        font-size: 0.76rem;
         display: block;
         color: var(--faint);
     }
 
     .tst-who .role-country {
-        font-size: 0.8rem;
+        font-size: 0.76rem;
         display: block;
         color: var(--faint);
     }
@@ -3743,6 +3773,22 @@ a.contact-line:hover {
 
     .faq-a p {
         padding-left: 1.3rem;
+    }
+
+    /* center every footer group on mobile */
+    #site-footer .foot-top,
+    #site-footer .foot-bot {
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
+
+    #site-footer .foot-brand {
+        align-items: center;
+    }
+
+    #site-footer .social-row {
+        justify-content: center;
     }
 }
 

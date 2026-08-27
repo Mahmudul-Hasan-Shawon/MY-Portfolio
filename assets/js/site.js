@@ -2454,14 +2454,12 @@ function tstHTML(n) {
     var cards = allCards.map(function (t, i) {
         var r = Math.max(0, Math.min(5, Number(t.rating) || 5));
         return '<article class="card tst" data-reveal style="--d:' + (i % 3 * 90) + 'ms">' +
-            '<span class="quote-mark">&ldquo;</span>' +
+            starsHTML(r) +
             '<blockquote>' + esc(t.quote) + '</blockquote>' +
             '<div class="tst-foot">' + avatar(t.avatar, t.name) +
             '<div class="tst-who"><b>' + esc(t.name) + '</b>' +
             (t.role || t.project ? formatRole(t.role || t.project) : '') +
-            '</div>' +
-            starsHTML(r) +
-            '</div></article>';
+            '</div></div></article>';
     }).join("");
 
     // Check if motion preference is reduced
@@ -2477,14 +2475,12 @@ function tstHTML(n) {
             list.map(function (t, i) {
                 var r = Math.max(0, Math.min(5, Number(t.rating) || 5));
                 return '<article class="card tst" data-reveal style="--d:' + (i * 70) + 'ms">' +
-                    '<span class="quote-mark">&ldquo;</span>' +
+                    starsHTML(r) +
                     '<blockquote>' + esc(t.quote) + '</blockquote>' +
                     '<div class="tst-foot">' + avatar(t.avatar, t.name) +
                     '<div class="tst-who"><b>' + esc(t.name) + '</b>' +
                     (t.role || t.project ? formatRole(t.role || t.project) : '') +
-                    '</div>' +
-                    starsHTML(r) +
-                    '</div></article>';
+                    '</div></div></article>';
             }).join("") +
             '</div></div></section>';
     }
@@ -2672,10 +2668,7 @@ function renderFooter() {
         '<div class="social-row">' + socialHTML(false) + '</div>' +
         '</div>' +
         '<div class="foot-bot">' +
-        '<span>' + esc(cfg("copyrightText")) + '</span>' +
-        '<span class="foot-status"><span class="status-dot"></span>' +
-        esc(cfg("statusText", "")) + (cfg("versionLabel") ? ' · ' + esc(cfg("versionLabel")) : '') +
-        '</span></div></div>';
+        '<span>' + esc(cfg("copyrightText")) + '</span></div></div>';
 }
 
 /* ==========================================================================
@@ -2967,10 +2960,32 @@ function scrollSpy() {
 /* ── Header, progress bar, back-to-top ───────────────────────────────── */
 var TT_C = 2 * Math.PI * 19;            // ring circumference (matches the SVG)
 var ttFill = document.getElementById("tt-fill");
+var HDR_LAST = 0;                       // last scroll position, for direction
+var HDR_LAST_DIR = 0;                   // 1 = down, -1 = up, 0 = unknown
+var HDR_TICKS = 0;                      // consecutive samples in the same direction
 
 function onScroll() {
     var y = window.scrollY || document.documentElement.scrollTop;
-    $("#site-header").classList.toggle("stuck", y > 24);
+    var h = document.getElementById("site-header");
+    var stuck = y > 24;
+    h.classList.toggle("stuck", stuck);
+
+    /* Slide the bar away while scrolling down (content is being read), and
+       bring it back the moment the user scrolls up — or returns near the
+       top. Requires a couple of samples in the same direction so a jittery
+       wheel/pull doesn't flicker it. */
+    var dir = y > HDR_LAST + 2 ? 1 : (y < HDR_LAST - 2 ? -1 : 0);
+    HDR_LAST = y;
+    if (dir === 0) { HDR_TICKS += 1; }
+    else if (dir === HDR_LAST_DIR) { HDR_TICKS += 1; }
+    else { HDR_LAST_DIR = dir; HDR_TICKS = 1; }
+
+    if (stuck && HDR_LAST_DIR === 1 && HDR_TICKS >= 2) {
+        h.classList.add("hide");
+    } else if (HDR_LAST_DIR === -1 || !stuck) {
+        h.classList.remove("hide");
+    }
+
     $("#to-top").classList.toggle("show", y > 700);
     $("#to-top").hidden = false;
 
