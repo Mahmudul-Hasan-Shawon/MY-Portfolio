@@ -965,7 +965,7 @@ h4 {
 
 .brand-handle {
     font-family: 'Afacad Flux', 'Sora', system-ui, sans-serif;
-    font-size: 1.15rem;
+    font-size: 1.35rem;
     font-weight: 600;
     letter-spacing: -.02em;
     color: var(--text);
@@ -1508,8 +1508,8 @@ h4 {
 }
 
 .term-dot {
-    width: 9px;
-    height: 9px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: var(--line);
 }
@@ -1567,18 +1567,57 @@ h4 {
     }
 }
 
+.term-typed {
+    color: var(--text);
+    /* don't stagger-fade this line; it's revealed char-by-char by the
+       typewriter, so keep it fully opaque for the prompt + cursor */
+    opacity: 1;
+    transform: none;
+    animation: none;
+    min-height: 1.6em;
+}
+
+.term-type {
+    position: relative;
+    white-space: pre-wrap;
+}
+
 .term-caret {
     display: inline-block;
     width: 7px;
-    height: 14px;
+    height: 1em;
     background: var(--accent);
     vertical-align: -2px;
-    animation: blink 1.05s steps(2) infinite;
+    box-shadow: 0 0 10px var(--accent-dim);
+    /* smooth, eased blink instead of the old hard steps(2) tick */
+    animation: blinkSmooth 1s ease-in-out infinite;
 }
 
-@keyframes blink {
+@keyframes blinkSmooth {
+    0%,
+    100% {
+        opacity: 1;
+    }
     50% {
         opacity: 0;
+    }
+}
+
+/* while typing, the cursor is a solid block hugging the end of the text;
+   once finished it settles into the eased blink above */
+.term-typed .term-type.is-typing .term-caret,
+.term-line.term-typed .term-type:not(.is-typing) .term-caret {
+    animation: blinkBlock 0.7s ease-in-out infinite;
+}
+
+@keyframes blinkBlock {
+    0%,
+    100% {
+        opacity: 1;
+        background: var(--accent);
+    }
+    50% {
+        opacity: 0.15;
     }
 }
 
@@ -3222,7 +3261,7 @@ a.contact-line:hover {
 
 .foot-brand .fb-name {
     font-family: var(--ff-display);
-    font-size: 1.8rem;
+    font-size: 1.4rem;
 }
 
 .foot-brand .fb-tag {

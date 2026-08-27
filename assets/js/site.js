@@ -1284,9 +1284,18 @@ function heroHTML() {
         var m = l.match(/^\$\s*(.*)$/);
         var body = m ? m[1] : l;
         var last = i === tl.length - 1;
+        if (last) {
+            /* Last line is a typewriter: only the prompt fades in via CSS;
+               the content + caret are typed by termType() (char-by-char,
+               smooth cursor, loops forever). */
+            return '<div class="term-line term-typed" style="animation-delay:' +
+                (300 + i * 260) + 'ms">' +
+                '<span class="p">$</span>' +
+                '<span class="term-type"><span class="term-type-inner"></span>' +
+                '<span class="term-caret"></span></span></div>';
+        }
         return '<div class="term-line" style="animation-delay:' + (300 + i * 260) + 'ms">' +
-            '<span class="p">$</span><span>' + esc(body) +
-            (last ? '<span class="term-caret"></span>' : '') + '</span></div>';
+            '<span class="p">$</span><span>' + esc(body) + '</span></div>';
     }).join("") : "";
 
     var badges = listOf(cfg("heroBadges")).map(function (b) {
@@ -2696,6 +2705,47 @@ function initUI(deferReveal) {
     wireFaq();
     wireForm();
     warmThumbs();
+    termType();
+}
+
+/* ── Terminal typewriter ──────────────────────────────────────────────
+   The last "$ …" line is typed character by character with a smooth
+   cursor. Once the line is complete the caret keeps blinking for a beat,
+   holds ~4s, then the whole line is cleared and typed again — forever. */
+var TERM = { timer: 0, hold: 0 };
+
+function termType() {
+    if (TERM.timer) { clearTimeout(TERM.timer); TERM.timer = 0; }
+    if (TERM.hold) { clearTimeout(TERM.hold); TERM.hold = 0; }
+
+    var line = $(".term-typed");
+    if (!line) return;
+    var inner = line.querySelector(".term-type-inner");
+    if (!inner) return;
+    inner.textContent = "";
+    inner.classList.remove("is-typing");
+    line.classList.remove("was-typed");
+
+    /* read the live config string so the loop handles edited lines too */
+    var tl = lines(cfg("terminalLines"));
+    var raw = tl.length ? tl[tl.length - 1] : "hello";
+    var m = raw.match(/^\$\s*(.*)$/);
+    var text = (m ? m[1] : raw) || "";
+
+    var i = 0;
+    var speed = 55;
+
+    function tick() {
+        if (i < text.length) {
+            inner.textContent = text.slice(0, ++i);
+            TERM.timer = setTimeout(tick, speed + Math.random() * 45);
+        } else {
+            inner.classList.add("is-typing");
+            line.classList.add("was-typed");
+            TERM.hold = setTimeout(termType, 4000); // hold then loop
+        }
+    }
+    TERM.timer = setTimeout(tick, 120);
 }
 
 /* ── Thumbnail warm-up ─────────────────────────────────────────────────
