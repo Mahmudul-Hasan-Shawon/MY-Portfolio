@@ -411,7 +411,7 @@ function renderRich(text) {
    ========================================================================== */
 var DEMO = {
     config: {
-        siteTitle: "mhshan — Automation Engineer",
+        siteTitle: "Shawon | Intelligent Automation Systems",
         brandName: "mhshan",
         brandMark: "mhs",
         brandSub: "code · automate · scale",
