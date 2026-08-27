@@ -3759,7 +3759,7 @@ a.contact-line:hover {
 .page-head h1 {
     font-family: var(--ff-display);
     font-size: clamp(2.1rem, 5vw, 3.4rem);
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1.06;
     letter-spacing: -.02em;
 }
