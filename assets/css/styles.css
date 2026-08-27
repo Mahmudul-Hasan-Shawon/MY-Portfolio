@@ -104,7 +104,7 @@
 
 html {
     scroll-behavior: smooth;
-    scroll-padding-top: 96px;
+    scroll-padding-top: 80px;
     -webkit-text-size-adjust: 100%;
 }
 
@@ -1369,8 +1369,10 @@ h4 {
 #hero {
     min-height: 100svh;
     display: flex;
-    align-items: center;
-    padding-block: clamp(7rem, 14vh, 10rem) clamp(3rem, 8vh, 5rem);
+    align-items: start;
+    /* Anchored just under the fixed nav rather than centred down the page,
+       so the terminal "shell" sits close to the menu. */
+    padding-block: clamp(5.5rem, 8vh, 7rem) clamp(3rem, 8vh, 5rem);
     position: relative;
 }
 
@@ -3650,7 +3652,19 @@ a.contact-line:hover {
     }
 
     .hero-trust {
+        flex-wrap: nowrap;
         gap: .8rem;
+        align-items: center;
+    }
+
+    /* keep avatar cluster fixed and let the text sit beside it, not wrap below */
+    .hero-trust .avatars {
+        flex: 0 0 auto;
+    }
+
+    .hero-trust .trust-txt {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .brand-sub {

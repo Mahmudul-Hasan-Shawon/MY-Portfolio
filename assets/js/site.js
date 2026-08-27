@@ -765,16 +765,30 @@ function preDone(after) {
         setTimeout(function () { el.setAttribute("hidden", ""); }, 1000);
     }
 
+    /* Reveal only once the web fonts have actually painted. Otherwise the
+       curtain lifts onto the fallback faces and the headings flash their
+       serif fallback (Times New Roman) — reading as "Instrument Serif"
+       instead of the real Sora/display pairing on some reloads. */
+    var lifted = false;
+    function reveal() {
+        if (lifted) return;
+        lifted = true;
+        lift();
+    }
+    var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    fontsReady.then(reveal);
+    setTimeout(reveal, 2500); // safety: never strand the sheet if a font hangs
+
     setTimeout(function () {
         // Let the counter arrive before wiping — but not forever, since a
         // backgrounded tab throttles rAF and would strand the sheet on screen.
-        if (PRE.pct >= 99.5) return lift();
+        if (PRE.pct >= 99.5) return reveal();
 
         var tries = 0;
         var seal = setInterval(function () {
             if (PRE.pct < 99.5 && ++tries < 60) return;
             clearInterval(seal);
-            lift();
+            reveal();
         }, 40);
     }, wait);
 }
@@ -2753,13 +2767,19 @@ function scrollLock(locked) {
     if (locked) LENIS.stop(); else LENIS.start();
 }
 
-/* scroll-padding-top is already declared in the stylesheet and, unlike the
-   live header height, does not change when the header shrinks on scroll. */
+/* The header is fixed and shrinks from its at-top height to a condensed
+   "stuck" height once scrolled. After a nav jump we always come to rest in
+   the stuck state, so offset from that height (plus a small 4px breathing
+   gap) — that keeps each section tucked right under the nav bar. Reading the
+   live height keeps it correct at any viewport/breakpoint. */
 function headerOffset() {
-    var pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
-    if (!isNaN(pad) && pad > 0) return pad;
     var h = $("#site-header");
-    return (h ? h.offsetHeight : 72) + 18;
+    if (!h) return 64;
+    var stuck = h.classList.contains("stuck");
+    if (!stuck) h.classList.add("stuck");   // force the resting-state height
+    var ht = h.offsetHeight;
+    if (!stuck) h.classList.remove("stuck");
+    return ht + 20;
 }
 
 /* Resolve the destination to an absolute pixel value from the real scroll
@@ -2768,8 +2788,12 @@ function headerOffset() {
 function scrollToEl(target) {
     if (!target) return;
     var top = function () {
+        /* A section's own top padding (--sec-y) is empty space; scroll past it
+           so the section's actual content — not its padding — sits under the
+           nav bar. */
+        var padTop = parseFloat(getComputedStyle(target).paddingTop) || 0;
         return Math.max(0, target.getBoundingClientRect().top +
-            (window.scrollY || window.pageYOffset) - headerOffset());
+            (window.scrollY || window.pageYOffset) - headerOffset() + padTop);
     };
 
     if (LENIS) {
@@ -2783,11 +2807,12 @@ function scrollToEl(target) {
             lock: true,      // a stray wheel tick mid-flight must not abort the trip
             onComplete: function () {
                 /* Anything that reflowed while we were flying (images finishing
-                   load, an accordion above, …) leaves the section half-off.
-                   Snap the difference immediately instead of easing there. */
+                   load, an accordion above, …) leaves the section slightly off.
+                   Ease the residual over instead of an instant snap, so the
+                   landing still feels like one continuous smooth glide. */
                 var now = top();
                 if (Math.abs(now - y) > 2) {
-                    LENIS.scrollTo(now, { immediate: true, force: true });
+                    LENIS.scrollTo(now, { duration: 0.5, force: true, lock: true });
                 }
             }
         });
