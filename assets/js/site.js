@@ -1527,7 +1527,7 @@ function projectsHTML(n) {
         secHead("projects", n) +
         '<div class="proj-grid">' + projectCards(list) + '</div>' +
         '<div class="proj-actions" data-reveal>' + more +
-        '<a class="btn btn-ghost" href="#contact">Have something similar in mind?' +
+        '<a class="btn btn-accent" href="#contact">Have something similar in mind?' +
         '<i class="fa-solid fa-arrow-right"></i></a>' +
         '</div></div></section>';
 }
@@ -1551,7 +1551,7 @@ function pageProjects() {
         '<div class="proj-grid" id="proj-grid" aria-live="polite">' +
         projectCards(scopedProjects()) + '</div>' +
         '<div class="proj-actions" data-reveal>' +
-        '<a class="btn btn-ghost" href="' + esc(urlHome()) + '" data-route>' +
+        '<a class="btn btn-accent" href="' + esc(urlHome()) + '" data-route>' +
         '<i class="fa-solid fa-arrow-left"></i>Back home</a>' +
         '<a class="btn btn-accent" href="' + esc(urlHome()) + '#contact" data-route>' +
         'Start a project<i class="fa-solid fa-arrow-right"></i></a>' +
@@ -1602,7 +1602,7 @@ function pageProject(p) {
         '" target="_blank" rel="noopener">View live<i class="fa-solid fa-arrow-up-right-from-square"></i></a>';
     if (p.repoUrl) actions += '<a class="btn btn-ghost" href="' + esc(p.repoUrl) +
         '" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i>Source</a>';
-    actions += '<a class="btn btn-ghost" href="' + esc(urlHome()) + '#contact" data-route>' +
+    actions += '<a class="btn btn-accent" href="' + esc(urlHome()) + '#contact" data-route>' +
         'Build something like this<i class="fa-solid fa-arrow-right"></i></a>';
 
     // Previous / next walk the visible list in sheet order.
@@ -2535,7 +2535,7 @@ function svcHTML(n) {
             (bl ? '<ul>' + bl + '</ul>' : '') +
             (s.price || s.buttonText ? '<div class="svc-foot">' +
                 (s.price ? '<span class="svc-price">' + esc(s.price) + '</span>' : '<span></span>') +
-                '<a class="btn btn-ghost btn-sm" href="' + esc(s.buttonLink || "#contact") + '">' +
+                '<a class="btn btn-accent btn-sm" href="' + esc(s.buttonLink || "#contact") + '">' +
                 esc(s.buttonText || "Enquire") + '</a></div>' : '') +
             '</article>';
     }).join("");
