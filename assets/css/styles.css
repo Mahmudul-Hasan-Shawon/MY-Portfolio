@@ -1768,12 +1768,10 @@ h4 {
     width: 100%;
     aspect-ratio: 4/5;
     object-fit: cover;
-    filter: grayscale(.35) contrast(1.05);
-    transition: filter .6s var(--ease), transform .8s var(--ease);
+    transition: transform .8s var(--ease);
 }
 
 .about-media:hover img {
-    filter: none;
     transform: scale(1.03);
 }
 
