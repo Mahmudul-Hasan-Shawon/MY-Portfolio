@@ -1527,7 +1527,7 @@ function projectsHTML(n) {
         secHead("projects", n) +
         '<div class="proj-grid">' + projectCards(list) + '</div>' +
         '<div class="proj-actions" data-reveal>' + more +
-        '<a class="btn btn-accent" href="#contact">Have something similar in mind?' +
+        '<a class="btn btn-ghost" href="#contact">Have something similar in mind?' +
         '<i class="fa-solid fa-arrow-right"></i></a>' +
         '</div></div></section>';
 }
