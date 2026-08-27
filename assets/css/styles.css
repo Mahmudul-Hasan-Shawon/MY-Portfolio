@@ -2119,7 +2119,7 @@ h4 {
 .proj-thumb .veil {
     position: absolute;
     inset: 0;
-    background: linear-gradient(transparent 45%, rgba(6, 8, 10, .92));
+    background: linear-gradient(transparent 35%, rgba(6, 8, 10, .92));
 }
 
 .proj-cat {
