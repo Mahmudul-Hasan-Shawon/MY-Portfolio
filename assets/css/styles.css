@@ -339,23 +339,6 @@ body.cursor-on .cursor-glow {
 
 /* ── Schematic backdrop ───────────────────────────────────────────── */
 
-.pre-grid {
-    position: absolute;
-    inset: -76px;
-    background-image:
-        linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
-    background-size: 76px 76px;
-    mask-image: radial-gradient(ellipse 62% 54% at 50% 50%, #000 8%, transparent 72%);
-    -webkit-mask-image: radial-gradient(ellipse 62% 54% at 50% 50%, #000 8%, transparent 72%);
-    animation: pre-drift 20s linear infinite;
-}
-
-/* One full cell of travel, so the loop is seamless. */
-@keyframes pre-drift {
-    to { transform: translate3d(76px, 76px, 0); }
-}
-
 /* ── Corner brackets ──────────────────────────────────────────────── */
 
 .pre-frame span {
@@ -599,7 +582,6 @@ body.cursor-on .cursor-glow {
         transition-delay: 0s;
     }
 
-    .pre-grid,
     .pre-scan,
     .pre-txt::after {
         animation: none !important;
@@ -1935,7 +1917,7 @@ h4 {
     transition: width 1.2s var(--ease-out);
 }
 
-/* ── Marquee ─────────────────────────────────────────────── */
+/* ── Marquee (skills) ─────────────────────────────────────── */
 
 .marquee {
     margin-top: 2.6rem;
@@ -1945,15 +1927,17 @@ h4 {
     border-block: 1px solid var(--line-soft);
     padding-block: 1.1rem;
     overflow: hidden;
+    background: var(--surface);
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-    background: var(--surface);
 }
 
 .marquee-track {
     display: flex;
+    align-items: center;
     gap: 2.6rem;
     width: max-content;
+    padding-left: 2.6rem;
     animation: slide 38s linear infinite;
 }
 
@@ -1967,6 +1951,9 @@ h4 {
     }
 }
 
+/* Original strip items: icon + mono label, glowing gently while scrolling.
+   Each item drifts on its own slow, offset cycle so they never blink in
+   sync — a random-looking, smooth pulse across the strip. */
 .marquee-item {
     display: flex;
     align-items: center;
@@ -1976,112 +1963,51 @@ h4 {
     letter-spacing: 0.04em;
     color: var(--faint);
     white-space: nowrap;
-    transition: color 0.8s ease;
     padding: 0 0.5rem;
-    position: relative;
+    animation: textGlow var(--glow-dur, 7s) ease-in-out var(--glow-delay, 0s) infinite;
 }
 
 .marquee-item i {
     font-size: 1rem;
-    color: var(--faint);
-    opacity: 0.6;
-    transition: color 0.8s ease, opacity 0.8s ease;
+    animation: iconGlow var(--glow-dur, 7s) ease-in-out var(--glow-delay, 0s) infinite;
 }
 
-/* When an item is in the center (using CSS animation to detect) */
-.marquee-item:nth-child(4n+1) {
-    animation: glowCenter 4s ease-in-out infinite;
-}
-
-.marquee-item:nth-child(4n+2) {
-    animation: glowCenter 4s ease-in-out 1s infinite;
-}
-
-.marquee-item:nth-child(4n+3) {
-    animation: glowCenter 4s ease-in-out 2s infinite;
-}
-
-.marquee-item:nth-child(4n+4) {
-    animation: glowCenter 4s ease-in-out 3s infinite;
-}
-
-@keyframes glowCenter {
-    0% {
-        color: var(--faint);
-    }
-    20% {
-        color: var(--faint);
-    }
-    40% {
-        color: var(--accent);
-        transform: scale(1.05);
-    }
-    60% {
-        color: var(--accent);
-        transform: scale(1.05);
-    }
-    80% {
-        color: var(--faint);
-        transform: scale(1);
-    }
+@keyframes textGlow {
+    0%,
+    15%,
+    62%,
     100% {
         color: var(--faint);
-        transform: scale(1);
+    }
+    38% {
+        color: var(--accent);
     }
 }
 
-@keyframes glowCenterIcon {
-    0% {
-        color: var(--faint);
-        opacity: 0.6;
-    }
-    20% {
-        color: var(--faint);
-        opacity: 0.6;
-    }
-    40% {
-        color: var(--accent);
-        opacity: 1;
-    }
-    60% {
-        color: var(--accent);
-        opacity: 1;
-    }
-    80% {
-        color: var(--faint);
-        opacity: 0.6;
-    }
+@keyframes iconGlow {
+    0%,
+    15%,
+    62%,
     100% {
         color: var(--faint);
         opacity: 0.6;
     }
+    38% {
+        color: var(--accent);
+        opacity: 1;
+        text-shadow: 0 0 14px var(--accent);
+    }
 }
 
-.marquee-item i {
-    animation: glowCenterIcon 4s ease-in-out infinite;
-}
-
-.marquee-item:nth-child(4n+2) i {
-    animation-delay: 1s;
-}
-
-.marquee-item:nth-child(4n+3) i {
-    animation-delay: 2s;
-}
-
-.marquee-item:nth-child(4n+4) i {
-    animation-delay: 3s;
-}
-
-/* Alternative: Use CSS custom properties for better control */
-.marquee-item {
-    --glow-delay: 0s;
-    animation: glowCenter 4s ease-in-out var(--glow-delay) infinite;
-}
-
-.marquee-item i {
-    animation: glowCenterIcon 4s ease-in-out var(--glow-delay) infinite;
-}
+/* Slow, staggered pseudo-random cycle so items glow out of phase */
+.marquee-item:nth-child(8n+1) { --glow-dur: 6.8s; --glow-delay: 0s; }
+.marquee-item:nth-child(8n+2) { --glow-dur: 7.4s; --glow-delay: 1.1s; }
+.marquee-item:nth-child(8n+3) { --glow-dur: 7.1s; --glow-delay: 2.8s; }
+.marquee-item:nth-child(8n+4) { --glow-dur: 6.9s; --glow-delay: .6s; }
+.marquee-item:nth-child(8n+5) { --glow-dur: 7.6s; --glow-delay: 2.2s; }
+.marquee-item:nth-child(8n+6) { --glow-dur: 7.2s; --glow-delay: 3.4s; }
+.marquee-item:nth-child(8n+7) { --glow-dur: 7.0s; --glow-delay: 1.7s; }
+.marquee-item:nth-child(8n+8) { --glow-dur: 7.3s; --glow-delay: .2s; }
 
 /* ==========================================================================
    PROJECTS
@@ -3318,7 +3244,8 @@ a.contact-line:hover {
     flex-wrap: wrap;
     gap: 1rem;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    text-align: center;
     padding-top: 1.4rem;
     font-family: var(--ff-mono);
     font-size: .68rem;
