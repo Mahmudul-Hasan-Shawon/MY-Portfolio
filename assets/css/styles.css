@@ -553,7 +553,7 @@ main {
 }
 
 .section+.section {
-    border-top: 1px solid var(--line-soft);
+    border-top: 0;
 }
 
 .sec-head {
@@ -712,6 +712,16 @@ h4 {
 }
 
 #faq .sec-title em {
+    font-size: clamp(3.5rem, 5.5vw, 4.5rem);
+    font-weight: 900;
+}
+[data-theme="light"] #contact .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 5.5vw, 4.5rem);
+    font-weight: 900;
+}
+
+#contact .sec-title em {
     font-size: clamp(3.5rem, 5.5vw, 4.5rem);
     font-weight: 900;
 }
@@ -893,13 +903,15 @@ h4 {
 [data-reveal] {
     opacity: 0;
     transform: translateY(22px);
-    transition: opacity .8s var(--ease-out), transform .8s var(--ease-out);
+    filter: blur(6px);
+    transition: opacity .8s var(--ease-out), transform .8s var(--ease-out), filter .8s var(--ease-out);
     transition-delay: var(--d, 0ms);
 }
 
 [data-reveal].in {
     opacity: 1;
     transform: none;
+    filter: blur(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -914,6 +926,7 @@ h4 {
     [data-reveal] {
         opacity: 1;
         transform: none;
+        filter: none;
     }
 
     html {
@@ -944,7 +957,6 @@ h4 {
     background: color-mix(in srgb, var(--bg) 82%, transparent);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border-bottom-color: var(--line-soft);
     padding-block: .55rem;
 }
 
@@ -1138,7 +1150,7 @@ h4 {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     opacity: 0;
-    transition: opacity .4s var(--ease);
+    transition: opacity .6s var(--ease);
 }
 
 [data-theme="light"] .drawer-veil {
@@ -1161,7 +1173,6 @@ h4 {
         var(--bg-2);
     border-left: 1px solid var(--line);
     border-radius: var(--r-lg) 0 0 var(--r-lg);
-    box-shadow: -30px 0 70px -30px rgba(0, 0, 0, .6);
     /* Clears the notch on iOS without pushing the panel in on everything else. */
     padding: max(1.15rem, env(safe-area-inset-top)) 1.25rem
              max(1.15rem, env(safe-area-inset-bottom));
@@ -1175,7 +1186,7 @@ h4 {
 }
 
 [data-theme="light"] #drawer {
-    box-shadow: -30px 0 60px -34px rgba(20, 22, 26, .45);
+    /* Clears the notch on iOS without pushing the panel in on everything else. */
 }
 
 #drawer.show {
@@ -1189,7 +1200,6 @@ h4 {
     justify-content: space-between;
     gap: .75rem;
     padding-bottom: .9rem;
-    border-bottom: 1px solid var(--line-soft);
 }
 
 .drawer-brand {
@@ -1348,7 +1358,6 @@ h4 {
 .drawer-foot {
     margin-top: auto;
     padding-top: 1.1rem;
-    border-top: 1px solid var(--line-soft);
     display: grid;
     gap: .9rem;
 }
@@ -1470,7 +1479,6 @@ h4 {
     gap: 1rem;
     flex-wrap: wrap;
     padding-top: 1.6rem;
-    border-top: 1px solid var(--line-soft);
 }
 
 .avatars {
@@ -1721,16 +1729,11 @@ h4 {
     padding: clamp(1.4rem, 3vw, 2.1rem);
     display: grid;
     gap: .35rem;
-    transition: background .35s var(--ease);
     position: relative;
 }
 
 [data-theme="light"] .stat {
     background: #efe4f8;
-}
-
-.stat:hover {
-    background: var(--surface);
 }
 
 .stat-top {
@@ -1993,7 +1996,6 @@ h4 {
     margin-left: calc(-50vw + 50%);
     margin-right: calc(-50vw + 50%);
     width: 100vw;
-    border-block: 1px solid var(--line-soft);
     padding-block: 1.1rem;
     overflow: hidden;
     background: var(--surface);
@@ -2161,6 +2163,59 @@ h4 {
     outline-offset: 3px;
 }
 
+/* Scroll-driven reveal: each card animates as it moves through the
+   viewport, so cards emerge one after another tied to scroll position
+   rather than a row-based stagger. */
+@supports (animation-timeline: view()) {
+
+    .proj,
+    .skill-card,
+    .svc,
+    .faq-item {
+        animation: projScrollReveal linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 45%;
+    }
+}
+
+@keyframes projScrollReveal {
+    0% {
+        opacity: 0;
+        filter: blur(8px);
+        translate: 0 44px;
+    }
+    100% {
+        opacity: 1;
+        filter: blur(0);
+        translate: 0 0;
+    }
+}
+
+/* Fallback when scroll timelines aren't supported: fade up on load,
+   sequenced card by card via an index set per card. */
+@supports not (animation-timeline: view()) {
+
+    .proj {
+        animation: fadeUp .6s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 90ms);
+    }
+
+    .skill-card {
+        animation: fadeUp .6s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 90ms);
+    }
+
+    .svc {
+        animation: fadeUp .6s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 90ms);
+    }
+
+    .faq-item {
+        animation: fadeUp .6s var(--ease-out) both;
+        animation-delay: calc(var(--i, 0) * 90ms);
+    }
+}
+
 @keyframes fadeUp {
     from {
         opacity: 0;
@@ -2235,13 +2290,14 @@ h4 {
     font-size: .75rem;
     opacity: 0;
     transform: translateY(8px) rotate(-25deg);
-    transition: all .4s var(--ease);
+    transition: opacity .4s var(--ease), transform .4s var(--ease), visibility .4s;
     visibility: hidden;
 }
 
 .proj:hover .proj-open {
-    opacity: 0;
-    visibility: hidden;
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+    visibility: visible;
 }
 
 .proj-body {
@@ -2284,7 +2340,6 @@ h4 {
     gap: .6rem;
     margin-top: .3rem;
     padding-top: .8rem;
-    border-top: 1px solid var(--line-soft);
     font-family: var(--ff-mono);
     font-size: .66rem;
     color: var(--faint);
@@ -2451,7 +2506,6 @@ h4 {
     gap: .5rem;
     list-style: none;
     padding-top: .9rem;
-    border-top: 1px solid var(--line-soft);
 }
 
 .svc ul li {
@@ -2643,7 +2697,6 @@ h4 {
     gap: 0.85rem;
     margin-top: .35rem;
     padding-top: 1.1rem;
-    border-top: 1px solid var(--line-soft);
 }
 
 .tst-foot img,
@@ -2781,7 +2834,6 @@ h4 {
         gap: 0.15rem 0.8rem;
         align-items: center;
         padding-top: .85rem;
-        border-top: 1px solid var(--line-soft);
     }
 
     .tst-foot img,
@@ -3021,13 +3073,23 @@ h4 {
 .faq-cta {
     margin-top: 2rem;
     text-align: center;
-    padding: 2rem 1.5rem;
-    border: 1px dashed var(--line);
+    padding: 2.4rem 1.5rem;
+    border: 1px solid var(--line);
     border-radius: var(--r-lg);
-    background: var(--surface);
+    background:
+        radial-gradient(22rem 11rem at 20% 0%, var(--accent-dim), transparent 70%),
+        var(--surface);
+    box-shadow: var(--card-sh);
     display: grid;
     gap: .7rem;
     justify-items: center;
+}
+
+[data-theme="light"] .faq-cta {
+    background:
+        radial-gradient(22rem 11rem at 20% 0%, var(--accent-dim), transparent 70%),
+        var(--surface-2);
+    box-shadow: 0 14px 36px -14px rgba(76, 5, 133, .35);
 }
 
 .faq-cta h3 {
@@ -3143,10 +3205,16 @@ a.contact-line:hover {
     padding: clamp(1.4rem, 3vw, 2.1rem);
     display: grid;
     gap: 1rem;
-    background: var(--surface);
+    background:
+        radial-gradient(22rem 11rem at 20% 0%, var(--accent-dim), transparent 70%),
+        var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
     box-shadow: var(--sh);
+}
+
+[data-theme="light"] .form-card {
+    box-shadow: 0 14px 36px -14px rgba(76, 5, 133, .35);
 }
 
 .form-row {
@@ -3297,7 +3365,6 @@ a.contact-line:hover {
 #site-footer {
     position: relative;
     z-index: 2;
-    border-top: 1px solid var(--line);
     background: var(--bg-2);
     padding-block: clamp(2.4rem, 5vw, 3.6rem) 1.4rem;
 }
@@ -3309,7 +3376,6 @@ a.contact-line:hover {
     align-items: center;
     justify-content: space-between;
     padding-bottom: 1.8rem;
-    border-bottom: 1px solid var(--line-soft);
 }
 
 .foot-brand {
@@ -3361,7 +3427,7 @@ a.contact-line:hover {
     background: rgba(3, 5, 7, .8);
     backdrop-filter: blur(6px);
     opacity: 0;
-    transition: opacity .4s var(--ease);
+    transition: opacity .6s var(--ease);
 }
 
 .sheet-veil.show {
@@ -3591,7 +3657,6 @@ a.contact-line:hover {
     flex-wrap: wrap;
     gap: .7rem;
     padding-top: 1.4rem;
-    border-top: 1px solid var(--line-soft);
 }
 
 /* ==========================================================================
@@ -3936,7 +4001,6 @@ a.contact-line:hover {
     gap: 1rem;
     margin-top: 3.2rem;
     padding-top: 1.8rem;
-    border-top: 1px solid var(--line-soft);
 }
 
 .pager-link {

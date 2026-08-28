@@ -1392,7 +1392,7 @@ function videoHTML(n) {
 function skillsHTML(n) {
     var cards = SKILLS.filter(function (s) { return on2(s.show); }).map(function (s, i) {
         var lvl = Number(s.level) || 0;
-        return '<article class="card skill-card" data-reveal style="--d:' + (i % 3 * 90) + 'ms">' +
+        return '<article class="card skill-card" style="--i:' + i + '">' +
             '<div class="skill-ico"><i class="' + esc(icon(s.icon, "fa-solid fa-layer-group")) + '"></i></div>' +
             '<h3>' + esc(s.category) + '</h3>' +
             '<ul class="skill-items">' + lines(s.items).map(function (it) {
@@ -1502,7 +1502,7 @@ function projectCards(list) {
 
     return list.map(function (p, i) {
         return '<a class="card proj" href="' + esc(urlProject(p.slug)) + '" ' +
-            'data-slug="' + esc(p.slug) + '" style="animation-delay:' + (i % 9 * 60) + 'ms">' +
+            'data-slug="' + esc(p.slug) + '" style="--i:' + i + '">' +
             '<span class="proj-thumb">' +
             (p.image ? '<img src="' + esc(thumbSrc(p.image)) + '" alt="' + esc(p.title) + '" loading="lazy" decoding="async">' : '') +
             '<span class="veil"></span>' +
@@ -2532,7 +2532,7 @@ function svcHTML(n) {
         var bl = lines(s.bullets).map(function (b) {
             return '<li><i class="fa-solid fa-check"></i><span>' + esc(b) + '</span></li>';
         }).join("");
-        return '<article class="card svc" data-reveal style="--d:' + (i % 3 * 90) + 'ms">' +
+        return '<article class="card svc" style="--i:' + i + '">' +
             '<span class="svc-num">' + (i < 9 ? "0" : "") + (i + 1) + '</span>' +
             '<div class="svc-ico"><i class="' + esc(icon(s.icon, "fa-solid fa-gear")) + '"></i></div>' +
             '<h3>' + esc(s.title) + '</h3>' +
@@ -2576,7 +2576,7 @@ function faqHTML(n) {
     if (!list.length) return "";
 
     var items = list.map(function (f, i) {
-        return '<div class="faq-item" data-reveal style="--d:' + (i * 50) + 'ms">' +
+        return '<div class="faq-item" style="--i:' + i + '">' +
             '<button class="faq-q" aria-expanded="false"><span class="qn">' + pad(i + 1) + '</span>' +
             '<span>' + esc(f.question) + '</span><i class="fa-solid fa-chevron-down chev"></i></button>' +
             '<div class="faq-a"><p>' + esc(f.answer) + '</p></div></div>';
