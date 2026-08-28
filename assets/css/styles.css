@@ -1449,48 +1449,21 @@ h4 {
 .hero h1 {
     font-family: var(--ff-display);
     font-size: clamp(2.7rem, 7.2vw, 5.4rem);
-    font-weight: 800;
-    line-height: 1.03;
-    letter-spacing: -.035em;
+    line-height: .98;
+    letter-spacing: -.03em;
     margin-bottom: 1.4rem;
-    color: var(--text);
 }
 
 [data-theme="light"] .hero h1 {
-    color: #2c2340;
+    color: #9a5fd0;
 }
 
 .hero h1 em {
     font-style: normal;
-    font-weight: 800;
-    color: transparent;
-    background: linear-gradient(105deg, var(--accent) 20%, var(--accent-2) 90%);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: var(--accent);
     position: relative;
-    white-space: nowrap;
-    padding-inline: .02em;
-}
-
-[data-theme="light"] .hero h1 em {
-    background: linear-gradient(105deg, #4C0585 20%, #9a5fd0 90%);
-    -webkit-background-clip: text;
-    background-clip: text;
-}
-
-/* Hand-drawn underline swept beneath the emphasised words */
-.hero h1 em::after {
-    content: "";
-    position: absolute;
-    left: .02em;
-    right: .02em;
-    bottom: .04em;
-    height: .14em;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--accent-2) 60%, transparent);
-    transform: rotate(-1.2deg);
-    transform-origin: left center;
-    z-index: -1;
+    font-weight: 700;
+    font-size: 1em;
 }
 
 .hero-sub {
@@ -1521,8 +1494,8 @@ h4 {
 
 .avatars img,
 .avatars .av-fallback {
-    width: 38px;
-    height: 38px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     object-fit: cover;
     /* border: 2px solid var(--bg); */
@@ -1540,7 +1513,7 @@ h4 {
 }
 
 .trust-txt {
-    font-size: .82rem;
+    font-size: .95rem;
     color: var(--muted);
     line-height: 1.45;
 }
