@@ -22,6 +22,7 @@
     --bg-0: rgba(8, 9, 11, 0);
     --bg-2: #0C0E11;
     --surface: #101317;
+    --surface-0: rgba(16, 19, 23, 0);
     --surface-2: #161A1F;
     --line: #23282F;
     --line-soft: #1A1E24;
@@ -30,6 +31,7 @@
     --text: #ECEAE4;
     --muted: #949AA3;
     --faint: #5F656E;
+    --heading: #ECEAE4;
 
     /* ── Accent ──────────────────────────────────────────── */
     --accent: #C9F24D;
@@ -79,27 +81,31 @@
 
 /* Light mode — set "Theme Mode: light" in the Config sheet */
 [data-theme="light"] {
-    --bg: #F7F6F2;
-    --bg-0: rgba(247, 246, 242, 0);
+    --bg: #FFFDFE;
+    --bg-0: rgba(255, 253, 254, 0);
     /* Shorter, tighter and far weaker: on a light surface the shadow only
        has to lift the card off the page, not separate it from black. */
-    --card-sh: 0 4px 18px -8px rgba(20, 22, 26, .16);
-    --card-sh-hover: 0 16px 42px -18px rgba(20, 22, 26, .2);
-    --card-sh-lift: 0 22px 56px -22px rgba(20, 22, 26, .22);
-    --bg-2: #FFFFFF;
-    --surface: #FFFFFF;
-    --surface-2: #F1EFE9;
-    --line: #E1DED5;
-    --line-soft: #EDEAE3;
-    --text: #14161A;
-    --muted: #5D636C;
-    --faint: #8B919A;
-    --accent: #4C7A0B;
-    --accent-ink: #FFFFFF;
-    --accent-dim: rgba(76, 122, 11, .10);
-    --accent-line: rgba(76, 122, 11, .28);
-    --sh: 0 18px 40px -24px rgba(20, 22, 26, .28);
-    --sh-lg: 0 40px 80px -44px rgba(20, 22, 26, .35);
+    --card-sh: 0 6px 24px -10px rgba(76, 5, 133, .28);
+    --card-sh-hover: 0 22px 48px -18px rgba(76, 5, 133, .34);
+    --card-sh-lift: 0 28px 60px -22px rgba(76, 5, 133, .4);
+    --bg-2: #ffffff;
+    --surface: #ffffff;
+    --surface-0: rgba(255, 255, 255, 0);
+    --surface-2: #f4ecfa;
+    --line: #e6d6f3;
+    --line-soft: #efe4f8;
+    --text: #3b2f4a;
+    --muted: #6e6190;
+    --faint: #9a8fb0;
+    --heading: #9a5fd0;
+    --accent: #4C0585;
+    --accent-ink: #FFFDFE;
+    --accent-dim: rgba(219, 181, 238, .35);
+    --accent-line: rgba(76, 5, 133, .24);
+    --accent-2: #9a5fd0;
+    --accent-2-dim: rgba(154, 95, 208, .12);
+    --sh: 0 18px 40px -24px rgba(76, 5, 133, .22);
+    --sh-lg: 0 40px 80px -44px rgba(76, 5, 133, .28);
 }
 
 html {
@@ -289,7 +295,7 @@ body.cursor-on .cursor-glow {
     background:
         radial-gradient(38rem 24rem at 50% 42%, var(--accent-dim), transparent 66%),
         radial-gradient(30rem 20rem at 84% 96%, var(--accent-2-dim), transparent 64%),
-        var(--bg);
+        #000;
 
     /* The lift itself. Visibility is held until the wipe finishes so the
        sheet cannot swallow a click on its way out. */
@@ -323,7 +329,6 @@ body.cursor-on .cursor-glow {
     top: 0;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent-2) 70%, transparent);
-    box-shadow: 0 0 18px var(--accent-line);
     opacity: 0;
 }
 
@@ -335,67 +340,6 @@ body.cursor-on .cursor-glow {
 @keyframes pre-seam {
     from { top: 0; }
     to   { top: 100%; }
-}
-
-/* ── Schematic backdrop ───────────────────────────────────────────── */
-
-/* ── Corner brackets ──────────────────────────────────────────────── */
-
-.pre-frame span {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border: 1px solid var(--line);
-    opacity: 0;
-    animation: pre-corner .6s var(--ease-out) forwards;
-}
-
-.pre-frame span:nth-child(1) {
-    top: var(--gut);
-    left: var(--gut);
-    border-right: 0;
-    border-bottom: 0;
-    animation-delay: .04s;
-}
-
-.pre-frame span:nth-child(2) {
-    top: var(--gut);
-    right: var(--gut);
-    border-left: 0;
-    border-bottom: 0;
-    animation-delay: .09s;
-}
-
-.pre-frame span:nth-child(3) {
-    bottom: var(--gut);
-    right: var(--gut);
-    border-left: 0;
-    border-top: 0;
-    animation-delay: .14s;
-}
-
-.pre-frame span:nth-child(4) {
-    bottom: var(--gut);
-    left: var(--gut);
-    border-right: 0;
-    border-top: 0;
-    animation-delay: .19s;
-}
-
-@keyframes pre-corner {
-    from { opacity: 0; transform: scale(.4); }
-    to   { opacity: 1; transform: none; }
-}
-
-/* Overriding name and delay together, because a forwards-filling
-   animation outranks any transition on the same properties. */
-#preloader.done .pre-frame span {
-    animation: pre-corner-out .5s var(--ease) forwards;
-    animation-delay: 0s;
-}
-
-@keyframes pre-corner-out {
-    to { opacity: 0; transform: scale(1.5); }
 }
 
 /* ── Monogram ─────────────────────────────────────────────────────── */
@@ -454,7 +398,6 @@ body.cursor-on .cursor-glow {
     line-height: 1;
     letter-spacing: .01em;
     color: var(--accent);
-    text-shadow: 0 0 46px var(--accent-line);
     /* Struck up from beneath the baseline rather than faded in. */
     clip-path: inset(105% 0 -10% 0);
     animation: pre-strike .8s var(--ease-out) .14s forwards;
@@ -559,7 +502,6 @@ body.cursor-on .cursor-glow {
     display: block;
     width: 0;
     background: linear-gradient(90deg, var(--accent-2), var(--accent));
-    box-shadow: 0 0 14px var(--accent-line);
 }
 
 /* Playhead at the leading edge, riding above the rail. */
@@ -571,7 +513,6 @@ body.cursor-on .cursor-glow {
     width: 2px;
     height: 12px;
     background: var(--accent);
-    box-shadow: 0 0 12px var(--accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -660,6 +601,7 @@ h4 {
     font-weight: 500;
     letter-spacing: -.02em;
     line-height: 1.1;
+    color: var(--heading);
 }
 
 .sec-title {
@@ -670,9 +612,94 @@ h4 {
 
 .sec-title em {
     font-style: normal;
-    color: var(--accent);
+    color: #C9F24D;
     font-weight: 700;
 }
+
+[data-theme="light"] .sec-title em {
+    color: #4c0585;
+}
+
+.hero-eyebrow {
+    font-family: 'Roboto', sans-serif;
+}
+
+[data-theme="light"] #about .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 15vw, 7.15rem);
+    font-weight: 900;
+}
+
+#about .sec-title em {
+    font-size: clamp(3.5rem, 15vw, 7.15rem);
+    font-weight: 900;
+}
+[data-theme="light"] .sec-head.center.in em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 4vw, 4.4rem);
+    font-weight: 900;
+}
+
+.sec-head.center.in em {
+    font-size: clamp(3.5rem, 4vw, 4.4rem);
+    font-weight: 900;
+}
+
+[data-theme="light"] #skills .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 4vw, 7.5rem);
+    font-weight: 900;
+}
+#skills .sec-title em {
+    font-size: clamp(3.5rem, 4vw, 7.5rem);
+    font-weight: 900;
+}
+[data-theme="light"] #projects .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+#projects .sec-title em {
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+[data-theme="light"] #testimonials .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+#testimonials .sec-title em {
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+[data-theme="light"] #services .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+#services .sec-title em {
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+[data-theme="light"] #experience .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+#experience .sec-title em {
+    font-size: clamp(3.5rem, 5.5vw, 7.5rem);
+    font-weight: 900;
+}
+[data-theme="light"] #faq .sec-title em {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 5.5vw, 4.5rem);
+    font-weight: 900;
+}
+#faq .sec-title em {
+    font-size: clamp(3.5rem, 5.5vw, 4.5rem);
+    font-weight: 900;
+}
+
 
 .sec-sub {
     color: var(--muted);
@@ -775,7 +802,8 @@ h4 {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r);
-    transition: border-color .35s var(--ease), transform .35s var(--ease), background .35s;
+    transition: border-color .35s var(--ease), transform .35s var(--ease),
+                background .35s, box-shadow .35s var(--ease);
 }
 
 .card::before,
@@ -808,10 +836,10 @@ h4 {
     transform: translateY(-4px);
 }
 
-.card:hover::before,
+/* .card:hover::before,
 .card:hover::after {
     opacity: 1;
-}
+} */
 
 /* ── Pills / tags ────────────────────────────────────────── */
 
@@ -950,7 +978,7 @@ h4 {
     font-size: 1.35rem;
     font-weight: 600;
     letter-spacing: -.02em;
-    color: var(--text);
+    color: var(--accent);
     line-height: 1;
 }
 
@@ -1270,7 +1298,7 @@ h4 {
 
 .drawer-links a:hover .idx,
 .drawer-links a.active .idx {
-    color: var(--accent);
+    color: var(--accent-2);
 }
 
 .drawer-links a:hover .go,
@@ -1343,7 +1371,7 @@ h4 {
 }
 
 .social-row a:hover {
-    color: var(--accent);
+    color: var(--accent-2);
     border-color: var(--accent-line);
     background: var(--accent-dim);
     transform: translateY(-3px);
@@ -1392,6 +1420,10 @@ h4 {
     line-height: .98;
     letter-spacing: -.03em;
     margin-bottom: 1.4rem;
+}
+
+[data-theme="light"] .hero h1 {
+    color: #9a5fd0;
 }
 
 .hero h1 em {
@@ -1669,12 +1701,16 @@ h4 {
 }
 
 .stat {
-    background: var(--bg);
+    background: #1a1e24;
     padding: clamp(1.4rem, 3vw, 2.1rem);
     display: grid;
     gap: .35rem;
     transition: background .35s var(--ease);
     position: relative;
+}
+
+[data-theme="light"] .stat {
+    background: #efe4f8;
 }
 
 .stat:hover {
@@ -1703,8 +1739,8 @@ h4 {
 }
 
 .stat-delta.down {
-    background: var(--accent-2-dim);
-    color: var(--accent-2);
+    background: #ff5a5a;
+    color: #ffffff;
 }
 
 .stat-val {
@@ -1742,7 +1778,7 @@ h4 {
     position: relative;
     border-radius: var(--r-lg);
     overflow: hidden;
-    border: 1px solid var(--line);
+    /* border: 1px solid var(--line); */
     background: var(--surface);
 }
 
@@ -1768,10 +1804,19 @@ h4 {
     gap: .15rem;
 }
 
+[data-theme="light"] .about-media figcaption {
+    background: linear-gradient(transparent, #fff);
+    backdrop-filter: blur(2px);
+}
+
 .about-media .nm {
     font-family: var(--ff-display);
     font-size: 1.5rem;
     color: #fff;
+}
+
+[data-theme="light"] .about-media .nm {
+    color: #2e344c;
 }
 
 .about-media .rl {
@@ -1816,6 +1861,7 @@ h4 {
     border-radius: var(--r-sm);
     background: var(--surface);
     font-size: .85rem;
+    box-shadow: var(--card-sh);
 }
 
 .about-mark i {
@@ -1859,6 +1905,13 @@ h4 {
     display: grid;
     gap: 1rem;
     align-content: start;
+    box-shadow: var(--card-sh);
+    transition: box-shadow .35s var(--ease), border-color .35s var(--ease),
+                transform .35s var(--ease);
+}
+
+.skill-card:hover {
+    box-shadow: var(--card-sh-hover);
 }
 
 .skill-ico {
@@ -2066,9 +2119,16 @@ h4 {
     text-align: left;
     padding: 0;
     background: var(--surface);
-    animation: fadeUp .5s var(--ease-out) both;
     color: inherit;
     text-decoration: none;
+    box-shadow: var(--card-sh);
+    transition: box-shadow .45s var(--ease), border-color .45s var(--ease),
+                transform .45s var(--ease), background .45s;
+}
+
+.proj:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-sh-hover);
 }
 
 /* The card is an anchor now, so its inner wrappers are spans. */
@@ -2103,10 +2163,7 @@ h4 {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Only the transform is transitioned: animating filter re-rasterises the
-       image every frame and is the main source of hover jank. The grayscale
-       lift still happens, just instantly, hidden inside the zoom. */
-    transition: transform .7s var(--ease);
+    transition: transform .7s var(--ease), filter .7s var(--ease);
     filter: grayscale(.25);
     will-change: transform;
 }
@@ -2119,7 +2176,16 @@ h4 {
 .proj-thumb .veil {
     position: absolute;
     inset: 0;
-    background: linear-gradient(transparent 35%, rgba(6, 8, 10, .92));
+    pointer-events: none;
+    background: linear-gradient(var(--surface-0) 38%, var(--surface));
+    /* Scale in lockstep with the image so the fade never slides against
+       the moving picture (that relative motion reads as a blinking seam). */
+    transition: transform .7s var(--ease);
+    will-change: transform;
+}
+
+.proj:hover .proj-thumb .veil {
+    transform: scale(1.06);
 }
 
 .proj-cat {
@@ -2154,11 +2220,12 @@ h4 {
     opacity: 0;
     transform: translateY(8px) rotate(-25deg);
     transition: all .4s var(--ease);
+    visibility: hidden;
 }
 
 .proj:hover .proj-open {
-    opacity: 1;
-    transform: none;
+    opacity: 0;
+    visibility: hidden;
 }
 
 .proj-body {
@@ -2316,6 +2383,14 @@ h4 {
     gap: 1rem;
     align-content: start;
     overflow: hidden;
+    box-shadow: var(--card-sh);
+    transition: box-shadow .45s var(--ease), border-color .45s var(--ease),
+                transform .45s var(--ease), background .45s;
+}
+
+.svc:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-sh-hover);
 }
 
 .svc-num {
@@ -2463,7 +2538,7 @@ h4 {
 
 .tst-scroll-track .tst:hover {
     opacity: 1;
-    transform: scale(1.02);
+    transform: scale(1.0);
     box-shadow: var(--card-sh-lift), 0 0 80px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
@@ -3103,7 +3178,7 @@ a.contact-line:hover {
 
 .field select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23949AA3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a8fb0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right .8rem center;
     background-size: 15px;
@@ -3376,6 +3451,10 @@ a.contact-line:hover {
     padding: .9rem 1rem;
     display: grid;
     gap: .2rem;
+}
+
+[data-theme="light"] .pp-fact {
+    background: #efe4f8;
 }
 
 .pp-fact .k {
@@ -3778,7 +3857,7 @@ a.contact-line:hover {
 }
 
 .crumbs a:hover {
-    color: var(--accent);
+    color: var(--accent-2);
 }
 
 .crumbs i {
@@ -3916,6 +3995,16 @@ html.theme-anim .bg-glow {
 
 [data-theme="light"] .bg-grid {
     opacity: .5;
+}
+
+/* The preloader is anchored to pure ink; on paper it must flip to a pure
+   white sheet so the loader text, drawn in the light palette's ink and
+   accent colours, stays legible. */
+[data-theme="light"] #preloader {
+    background:
+        radial-gradient(38rem 24rem at 50% 42%, var(--accent-dim), transparent 66%),
+        radial-gradient(30rem 20rem at 84% 96%, var(--accent-2-dim), transparent 64%),
+        #fff;
 }
 
 [data-theme="light"] .cursor-glow {
