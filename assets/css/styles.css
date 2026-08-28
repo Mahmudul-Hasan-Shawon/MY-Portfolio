@@ -2022,9 +2022,7 @@ h4 {
     }
 }
 
-/* Original strip items: icon + mono label, glowing gently while scrolling.
-   Each item drifts on its own slow, offset cycle so they never blink in
-   sync — a random-looking, smooth pulse across the strip. */
+/* Strip items: inline SVG logo + mono label — static, no blink/glow. */
 .marquee-item {
     display: flex;
     align-items: center;
@@ -2032,53 +2030,41 @@ h4 {
     font-family: var(--ff-mono);
     font-size: 0.82rem;
     letter-spacing: 0.04em;
-    color: var(--faint);
+    color: var(--muted);
     white-space: nowrap;
-    padding: 0 0.5rem;
-    animation: textGlow var(--glow-dur, 7s) ease-in-out var(--glow-delay, 0s) infinite;
+    padding: 0 1.1rem;
+    transition: color .3s var(--ease-out);
 }
 
-.marquee-item i {
-    font-size: 1rem;
-    animation: iconGlow var(--glow-dur, 7s) ease-in-out var(--glow-delay, 0s) infinite;
+.marquee-item:hover {
+    color: var(--accent);
 }
 
-@keyframes textGlow {
-    0%,
-    15%,
-    62%,
-    100% {
-        color: var(--faint);
-    }
-    38% {
-        color: var(--accent);
-    }
+.marquee-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: 0 0 auto;
+    color: var(--faint);
+    transition: color .3s var(--ease-out);
 }
 
-@keyframes iconGlow {
-    0%,
-    15%,
-    62%,
-    100% {
-        color: var(--faint);
-        opacity: 0.6;
-    }
-    38% {
-        color: var(--accent);
-        opacity: 1;
-        text-shadow: 0 0 14px var(--accent);
-    }
+.marquee-item:hover .marquee-ico {
+    color: var(--accent);
 }
 
-/* Slow, staggered pseudo-random cycle so items glow out of phase */
-.marquee-item:nth-child(8n+1) { --glow-dur: 6.8s; --glow-delay: 0s; }
-.marquee-item:nth-child(8n+2) { --glow-dur: 7.4s; --glow-delay: 1.1s; }
-.marquee-item:nth-child(8n+3) { --glow-dur: 7.1s; --glow-delay: 2.8s; }
-.marquee-item:nth-child(8n+4) { --glow-dur: 6.9s; --glow-delay: .6s; }
-.marquee-item:nth-child(8n+5) { --glow-dur: 7.6s; --glow-delay: 2.2s; }
-.marquee-item:nth-child(8n+6) { --glow-dur: 7.2s; --glow-delay: 3.4s; }
-.marquee-item:nth-child(8n+7) { --glow-dur: 7.0s; --glow-delay: 1.7s; }
-.marquee-item:nth-child(8n+8) { --glow-dur: 7.3s; --glow-delay: .2s; }
+.marquee-ico svg {
+    width: 100%;
+    height: 100%;
+}
+
+.marquee-sep {
+    color: var(--line);
+    font-size: 0.8rem;
+    margin-left: 0.1rem;
+}
 
 /* ==========================================================================
    PROJECTS
