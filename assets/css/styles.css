@@ -2022,7 +2022,8 @@ h4 {
     }
 }
 
-/* Strip items: inline SVG logo + mono label — static, no blink/glow. */
+/* Strip items: inline SVG logo + mono label — static accent tint, no blink/glow.
+   Light theme → var(--accent) = #4c0585 · Dark theme → #c9f24d */
 .marquee-item {
     display: flex;
     align-items: center;
@@ -2030,14 +2031,9 @@ h4 {
     font-family: var(--ff-mono);
     font-size: 0.82rem;
     letter-spacing: 0.04em;
-    color: var(--muted);
+    color: var(--accent);
     white-space: nowrap;
     padding: 0 1.1rem;
-    transition: color .3s var(--ease-out);
-}
-
-.marquee-item:hover {
-    color: var(--accent);
 }
 
 .marquee-ico {
@@ -2047,11 +2043,6 @@ h4 {
     width: 1.75rem;
     height: 1.75rem;
     flex: 0 0 auto;
-    color: var(--faint);
-    transition: color .3s var(--ease-out);
-}
-
-.marquee-item:hover .marquee-ico {
     color: var(--accent);
 }
 
