@@ -601,9 +601,9 @@ main {
     background: var(--accent-line);
 }
 
-[data-theme="light"] #hero {
+/* [data-theme="light"] #hero {
     background: #ffe4f3;
-}
+} */
 
 h1,
 h2,
