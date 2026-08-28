@@ -3720,6 +3720,12 @@ a.contact-line:hover {
     transform: none;
 }
 
+#to-top.fade {
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+}
+
 #to-top:hover {
     background: color-mix(in srgb, var(--accent) 70%, transparent);
     backdrop-filter: blur(14px) saturate(140%);

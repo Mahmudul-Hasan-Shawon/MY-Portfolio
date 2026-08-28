@@ -2986,8 +2986,13 @@ function onScroll() {
         h.classList.remove("hide");
     }
 
-    $("#to-top").classList.toggle("show", y > 700);
-    $("#to-top").hidden = false;
+    /* Fade the ring button away while scrolling down and glide it back
+       when scrolling up (or near the top) — same direction logic as the
+       header, but it also needs to have scrolled past 700px first. */
+    var tt = $("#to-top");
+    tt.classList.toggle("fade", stuck && HDR_LAST_DIR === 1 && HDR_TICKS >= 2);
+    tt.classList.toggle("show", y > 700);
+    tt.hidden = false;
 
     var h = document.documentElement.scrollHeight - window.innerHeight;
     var p = h > 0 ? y / h : 0;
