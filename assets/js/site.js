@@ -1298,9 +1298,8 @@ function heroHTML() {
             '<span class="p">$</span><span>' + esc(body) + '</span></div>';
     }).join("") : "";
 
-    var badges = listOf(cfg("heroBadges")).map(function (b) {
-        return '<span class="pill">' + esc(b) + '</span>';
-    }).join("");
+    var quote = cfg("heroQuote", "\u201CThe best way to predict the future is to invent it.\u201D");
+    var quoteAuthor = cfg("heroQuoteAuthor", "Alan Kay");
 
     return '<section id="hero" class="section"><div class="shell hero hero-grid">' +
         '<div data-reveal>' +
@@ -1322,7 +1321,9 @@ function heroHTML() {
             '<div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span>' +
             '<span class="term-dot"></span><span class="term-title">' + esc(cfg("terminalTitle", "~ terminal")) +
             '</span></div><div class="term-body">' + term + '</div></div>' +
-            (badges ? '<div class="hero-badges">' + badges + '</div>' : '') + '</div>' : '') +
+            '<blockquote class="hero-quote"><span class="q-mark">&ldquo;</span>' +
+            '<p>' + esc(quote) + '</p>' +
+            '<cite>&mdash; ' + esc(quoteAuthor) + '</cite></blockquote>' + '</div>' : '') +
         '</div>' +
         '<div class="scroll-hint"><span class="rail"></span>scroll</div>' +
         '</section>';
