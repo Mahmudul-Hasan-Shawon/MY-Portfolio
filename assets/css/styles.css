@@ -1498,9 +1498,9 @@ h4 {
     height: 38px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--bg);
+    /* border: 2px solid var(--bg); */
     margin-left: -12px;
-    background: var(--surface-2);
+    /* background: var(--surface-2); */
     display: grid;
     place-items: center;
     font-family: var(--ff-mono);
