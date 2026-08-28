@@ -614,6 +614,17 @@ h4 {
     line-height: 1.05;
 }
 
+[data-theme="light"] .proj-page .pp-head h1 {
+    color: #4c0585;
+    font-size: clamp(3.5rem, 15vw, 3rem);
+    font-weight: 900;
+}
+[data-theme="dark"] .proj-page .pp-head h1 {
+    color: #C9F24D;
+    font-size: clamp(3.5rem, 15vw, 3rem);
+    font-weight: 900;
+}
+
 .sec-title em {
     font-style: normal;
     color: #C9F24D;
