@@ -3237,6 +3237,7 @@ a.contact-line:hover {
 }
 
 [data-theme="light"] .form-card {
+    background: var(--surface);
     box-shadow: 0 14px 36px -14px rgba(76, 5, 133, .35);
 }
 
