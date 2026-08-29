@@ -209,8 +209,8 @@ function secHead(key, num, center) {
 
 /* Leading slash, no trailing slash. Set by ⚙ Config → "Projects Base Path". */
 function projBase() {
-    var b = String(cfg("projectsBasePath", "/portfolio")).trim();
-    if (!b) b = "/portfolio";
+    var b = String(cfg("projectsBasePath", "/pojects")).trim();
+    if (!b) b = "/projects";
     if (b.charAt(0) !== "/") b = "/" + b;
     return b.replace(/\/+$/, "");
 }
@@ -1303,8 +1303,8 @@ function heroHTML() {
 
     return '<section id="hero" class="section"><div class="shell hero hero-grid">' +
         '<div data-reveal>' +
-        (cfg("heroEyebrow") ? '<span class="hero-eyebrow"><i class="fa-solid fa-terminal"></i>' +
-            esc(cfg("heroEyebrow")) + '</span>' : '') +
+        (cfg("heroEyebrow") ? '<div class="hero-eyebrow-wrap"><span class="hero-eyebrow"><i class="fa-solid fa-terminal"></i>' +
+            esc(cfg("heroEyebrow")) + '</span></div>' : '') +
         '<h1>' + markup(cfg("heroTitle")) + '</h1>' +
         '<p class="hero-sub">' + markup(cfg("heroSubtitle")) + '</p>' +
         '<div class="hero-cta">' +

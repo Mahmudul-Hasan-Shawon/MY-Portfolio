@@ -911,7 +911,7 @@ h4 {
     opacity: 0;
     transform: translateY(22px);
     filter: blur(6px);
-    transition: opacity .8s var(--ease-out), transform .8s var(--ease-out), filter .8s var(--ease-out);
+    transition: opacity 1.2s var(--ease-out), transform 1.2s var(--ease-out), filter 1.2s var(--ease-out);
     transition-delay: var(--d, 0ms);
 }
 
@@ -3269,16 +3269,13 @@ a.contact-line:hover {
     display: grid;
     gap: 1rem;
     background:
-        radial-gradient(22rem 11rem at 20% 0%, var(--accent-dim), transparent 70%),
         var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
-    box-shadow: var(--sh);
 }
 
 [data-theme="light"] .form-card {
     background: var(--surface);
-    box-shadow: 0 14px 36px -14px rgba(76, 5, 133, .35);
 }
 
 .form-row {
@@ -3839,6 +3836,23 @@ a.contact-line:hover {
     .hero-grid {
         grid-template-columns: 1fr;
         gap: 2.6rem;
+    }
+
+    /* Centre the hero copy on mobile/tablet when it stacks into one column */
+    #hero .hero-grid > [data-reveal]:first-child {
+        text-align: center;
+    }
+
+    #hero .hero-sub {
+        margin-inline: auto;
+    }
+
+    #hero .hero-cta {
+        justify-content: center;
+    }
+
+    #hero .hero-trust {
+        justify-content: center;
     }
 
     .about-grid {
